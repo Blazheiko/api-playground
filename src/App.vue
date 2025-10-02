@@ -1,85 +1,58 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
   <RouterView />
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+<style>
+/* Primary color variables */
+:root {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.bg-primary-50 {
+  background-color: var(--color-primary-50);
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+.bg-primary-100 {
+  background-color: var(--color-primary-100);
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.bg-primary-500 {
+  background-color: var(--color-primary-500);
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+.bg-primary-600 {
+  background-color: var(--color-primary-600);
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+.text-primary-400 {
+  color: #60a5fa;
 }
 
-nav a:first-of-type {
-  border: 0;
+.text-primary-500 {
+  color: var(--color-primary-500);
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+.text-primary-600 {
+  color: var(--color-primary-600);
+}
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+.text-primary-700 {
+  color: var(--color-primary-700);
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+.ring-primary-500 {
+  --tw-ring-color: var(--color-primary-500);
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.border-primary-500 {
+  border-color: var(--color-primary-500);
 }
 </style>

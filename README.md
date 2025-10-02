@@ -1,48 +1,150 @@
-# api-playground
+# API Documentation Playground
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 приложение для интерактивного просмотра и тестирования API маршрутов.
 
-## Recommended IDE Setup
+## 🚀 Быстрый старт
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+### Предварительные требования
 
-## Recommended Browser Setup
+1. **Node.js** 20.19.0 или выше
+2. **API сервер** должен быть запущен на `http://127.0.0.1:8088`
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+### Установка и запуск
 
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```bash
+# Установка зависимостей
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Запуск dev сервера
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Приложение будет доступно по адресу `http://localhost:5173`
 
-```sh
-npm run build
+## 📋 Требования к API
+
+API сервер должен предоставлять endpoint:
+
+```
+GET http://127.0.0.1:8088/api/doc/routes
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Формат ответа
 
-```sh
-npm run lint
+```json
+{
+  "httpRoutes": [
+    {
+      "prefix": "users",
+      "description": "User Management",
+      "middlewares": ["auth"],
+      "rateLimit": {
+        "windowMs": 60000,
+        "maxRequests": 100
+      },
+      "group": [
+        {
+          "url": "/users/:id",
+          "method": "get",
+          "description": "Get user by ID",
+          "handler": "getUserById",
+          "validator": "userIdSchema"
+        }
+      ]
+    }
+  ],
+  "wsRoutes": [],
+  "validationSchemas": {
+    "userIdSchema": {
+      "id": {
+        "type": "number",
+        "required": true,
+        "description": "User ID"
+      }
+    }
+  },
+  "responseTypes": {
+    "UserResponse": {
+      "fields": {
+        "id": { "type": "number", "required": true, "example": 1 },
+        "name": { "type": "string", "required": true, "example": "John Doe" }
+      }
+    }
+  },
+  "handlerTypeMapping": {
+    "getUserById": "UserResponse"
+  }
+}
 ```
+
+## ✨ Возможности
+
+- 📚 Автоматическая загрузка и отображение API маршрутов
+- 🔍 Поиск по маршрутам
+- 🌓 Темная/светлая тема
+- 🧪 Интерактивное тестирование API
+- 📊 Детальная информация о валидации и ответах
+- 🔗 Уникальные URL для каждого маршрута
+- 📱 Адаптивный дизайн
+
+## 🛠️ Технологии
+
+- Vue 3 (Composition API)
+- TypeScript
+- Pinia (State Management)
+- Vue Router
+- Tailwind CSS
+- Vite
+
+## 📖 Дополнительная документация
+
+Смотрите [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) для подробной документации по структуре проекта и использованию.
+
+## 🔧 Настройка
+
+### Изменение API endpoint
+
+Если ваш API находится по другому адресу, измените `target` в `vite.config.ts`:
+
+```typescript
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://YOUR_API_URL',  // Замените на ваш URL
+      changeOrigin: true,
+      secure: false,
+    },
+  },
+}
+```
+
+## 📝 Скрипты
+
+```bash
+npm run dev          # Запуск dev сервера
+npm run build        # Сборка для production
+npm run preview      # Предпросмотр production сборки
+npm run type-check   # Проверка типов TypeScript
+npm run lint         # Линтинг кода
+npm run format       # Форматирование кода
+```
+
+## 🐛 Устранение проблем
+
+### Ошибка "Failed to fetch"
+
+Убедитесь, что:
+
+1. API сервер запущен на `http://127.0.0.1:8088`
+2. Endpoint `/api/doc/routes` доступен
+3. Dev сервер перезапущен после изменения `vite.config.ts`
+
+### Стили не применяются
+
+1. Убедитесь, что Tailwind CSS установлен
+2. Проверьте, что `tailwind.config.js` создан
+3. Перезапустите dev сервер
+
+## 📄 Лицензия
+
+MIT
