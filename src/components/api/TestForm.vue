@@ -138,17 +138,19 @@ const sendRequest = async () => {
 
     if (requestCount.value === 1) {
       const singleResult = results[0]
-      testResult.value = {
-        success: singleResult.success,
-        status: singleResult.status,
-        statusText: singleResult.statusText,
-        headers: singleResult.headers,
-        data: singleResult.data,
-        responseTime: singleResult.responseTime,
-        url: finalUrl,
-        method: props.route.method.toUpperCase(),
-        requestHeaders,
-        requestBody,
+      if (singleResult) {
+        testResult.value = {
+          success: singleResult.success,
+          status: singleResult.status,
+          statusText: singleResult.statusText,
+          headers: singleResult.headers,
+          data: singleResult.data,
+          responseTime: singleResult.responseTime,
+          url: finalUrl,
+          method: props.route.method.toUpperCase(),
+          requestHeaders,
+          requestBody,
+        }
       }
     } else {
       testResult.value = {
@@ -537,4 +539,3 @@ const clearResult = () => {
     </div>
   </div>
 </template>
-

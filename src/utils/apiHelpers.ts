@@ -1,4 +1,4 @@
-import type { ValidationSchema, ResponseType, RateLimit } from '@/stores/api'
+import type { ValidationSchema, ResponseType, RateLimit, RouteParameter } from '@/stores/api'
 
 export function getMethodClass(method: string): string {
   return `method-${method.toLowerCase()}`
@@ -13,11 +13,11 @@ export function getTypeClass(type: string): string {
     unknown: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300',
   }
 
-  return typeClasses[type] || typeClasses['unknown']
+  return (typeClasses[type] || typeClasses['unknown']) as string
 }
 
-export function extractParameters(url: string) {
-  const params = []
+export function extractParameters(url: string): RouteParameter[] {
+  const params: RouteParameter[] = []
   const matches = url.match(/:([^/]+)/g)
 
   if (matches) {
@@ -172,4 +172,3 @@ export function validateJSON(jsonString: string): { isValid: boolean; data?: any
     }
   }
 }
-
