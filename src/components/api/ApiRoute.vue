@@ -25,7 +25,7 @@ const router = useRouter()
 const apiStore = useApiStore()
 
 const isExpanded = computed(() => apiStore.isRouteExpanded(props.groupIndex, props.routeIndex))
-const isSelected = computed(() => apiStore.isRouteSelected(props.route.url, props.route.method))
+// const isSelected = computed(() => apiStore.isRouteSelected(props.route.url, props.route.method))
 const showTestForm = ref(false)
 const testFormRef = ref<InstanceType<typeof TestForm> | null>(null)
 
