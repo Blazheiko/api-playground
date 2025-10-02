@@ -27,6 +27,7 @@ const paramValues = ref<Record<string, string>>({})
 const headersError = ref<string>('')
 const bodyError = ref<string>('')
 const isLoading = ref(false)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const testResult = ref<any>(null)
 
 const validateHeaders = () => {
@@ -192,8 +193,8 @@ const clearResult = () => {
 
 <template>
   <div class="test-form-section">
-    <div class="border-t dark:border-gray-600 pt-6 mt-6">
-      <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+    <div class="border-t dark:border-gray-600 pt-3 mt-3">
+      <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
         <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -205,10 +206,10 @@ const clearResult = () => {
         API Testing
       </h5>
 
-      <form class="space-y-4" @submit.prevent="sendRequest">
+      <form class="space-y-3" @submit.prevent="sendRequest">
         <!-- URL Parameters -->
         <div v-if="parameters.length > 0">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >URL Parameters</label
           >
           <div class="space-y-2">
@@ -229,7 +230,7 @@ const clearResult = () => {
 
         <!-- Request Headers -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >Headers (JSON format)</label
           >
           <textarea
@@ -245,7 +246,7 @@ const clearResult = () => {
 
         <!-- Request Body (for POST/PUT/PATCH) -->
         <div v-if="isBodyMethod">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >Request Body (JSON format)</label
           >
           <textarea
@@ -299,9 +300,9 @@ const clearResult = () => {
       </form>
 
       <!-- Response Section -->
-      <div v-if="testResult" class="test-result-section mt-6">
-        <div class="border-t dark:border-gray-600 pt-4">
-          <h6 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+      <div v-if="testResult" class="test-result-section mt-4">
+        <div class="border-t dark:border-gray-600 pt-3">
+          <h6 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
             <svg
               class="h-4 w-4 text-blue-600"
               fill="none"

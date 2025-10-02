@@ -13,7 +13,7 @@ const groupIndex = computed(() => Number(route.params.groupIndex))
 const routeIndex = computed(() => Number(route.params.routeIndex))
 
 const currentGroup = computed(() => {
-  return apiStore.currentRouteGroups[groupIndex.value]
+  return apiStore.filteredGroups[groupIndex.value]
 })
 
 const currentRoute = computed(() => {
@@ -28,6 +28,10 @@ onMounted(async () => {
   // Check if route exists
   if (!currentRoute.value) {
     router.push('/')
+  } else {
+    // Устанавливаем selectedRoute для корректной подсветки в навигации
+    apiStore.setSelectedRoute(currentRoute.value.url, currentRoute.value.method)
+    apiStore.setActiveRoute(groupIndex.value, routeIndex.value)
   }
 })
 
@@ -112,4 +116,3 @@ const goBack = () => {
     </main>
   </div>
 </template>
-

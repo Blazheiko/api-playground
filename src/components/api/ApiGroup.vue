@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import type { ApiGroup } from '@/stores/api'
 import { formatRateLimit } from '@/utils/apiHelpers'
 import ApiRoute from './ApiRoute.vue'
@@ -7,39 +7,17 @@ import ApiRoute from './ApiRoute.vue'
 interface Props {
   group: ApiGroup
   groupIndex: number
-  expandAll?: boolean
-  collapseAll?: boolean
 }
 
 const props = defineProps<Props>()
 
 const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
-
-// Watch for expand/collapse all signals
-watch(
-  () => props.expandAll,
-  (newVal) => {
-    if (newVal) {
-      // Trigger expand in all routes
-      // This is handled in the parent component
-    }
-  },
-)
-
-watch(
-  () => props.collapseAll,
-  (newVal) => {
-    if (newVal) {
-      // Trigger collapse in all routes
-      // This is handled in the parent component
-    }
-  },
-)
 </script>
 
 <template>
   <div
-    class="group-item bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden fade-in"
+    :id="`group-${groupIndex}`"
+    class="group-item bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden fade-in scroll-mt-24"
   >
     <div
       class="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-gray-700 dark:to-gray-600 px-4 sm:px-6 py-4 border-b dark:border-gray-600"
@@ -96,6 +74,7 @@ watch(
         <ApiRoute
           v-for="(route, routeIndex) in group.group"
           :key="`${groupIndex}-${routeIndex}`"
+          :id="`route-${groupIndex}-${routeIndex}`"
           :route="route"
           :group-prefix="group.prefix"
           :route-index="routeIndex"
@@ -105,4 +84,3 @@ watch(
     </div>
   </div>
 </template>
-

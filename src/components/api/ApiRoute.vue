@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ApiRoute } from '@/stores/api'
 import { useApiStore } from '@/stores/api'
@@ -24,8 +24,10 @@ const props = defineProps<Props>()
 const router = useRouter()
 const apiStore = useApiStore()
 
-const isExpanded = ref(false)
+const isExpanded = computed(() => apiStore.isRouteExpanded(props.groupIndex, props.routeIndex))
+const isSelected = computed(() => apiStore.isRouteSelected(props.route.url, props.route.method))
 const showTestForm = ref(false)
+const testFormRef = ref<InstanceType<typeof TestForm> | null>(null)
 
 const isWebSocket = computed(() => apiStore.currentRouteType === 'ws')
 
@@ -88,17 +90,72 @@ const validationSchema = computed(() => {
 const routeRateLimit = computed(() => formatRateLimit(props.route.rateLimit))
 
 const toggleExpanded = () => {
-  isExpanded.value = !isExpanded.value
+  // Устанавливаем selectedRoute при клике на маршрут
+  apiStore.setSelectedRoute(props.route.url, props.route.method)
+  apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
+
+  if (isExpanded.value) {
+    apiStore.collapseAllRoutes()
+  } else {
+    apiStore.setExpandedRoute(props.groupIndex, props.routeIndex)
+  }
 }
 
-const toggleTestForm = () => {
+const toggleTestForm = async () => {
+  const wasExpanded = isExpanded.value
   showTestForm.value = !showTestForm.value
-  if (showTestForm.value && !isExpanded.value) {
-    isExpanded.value = true
+
+  if (showTestForm.value) {
+    // Если маршрут не развернут, сначала разворачиваем его
+    if (!wasExpanded) {
+      apiStore.setExpandedRoute(props.groupIndex, props.routeIndex)
+      // Ждем обновления DOM после разворачивания маршрута
+      await nextTick()
+    }
+
+    // Ждем еще один тик для полного рендеринга формы
+    await nextTick()
+
+    // Небольшая задержка для завершения анимаций
+    setTimeout(() => {
+      scrollToTestForm()
+    }, 100)
+  }
+}
+
+const scrollToTestForm = () => {
+  if (testFormRef.value && testFormRef.value.$el) {
+    const element = testFormRef.value.$el
+    const mainContent = document.querySelector('main')
+
+    if (mainContent) {
+      // Получаем позицию элемента относительно main контейнера
+      const elementTop = element.offsetTop
+
+      // Вычисляем оптимальную позицию скролла
+      // Показываем форму в верхней части видимой области с небольшим отступом
+      const targetScrollTop = elementTop - 100
+
+      mainContent.scrollTo({
+        top: targetScrollTop,
+        behavior: 'smooth',
+      })
+    } else {
+      // Fallback на случай, если main не найден
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      })
+    }
   }
 }
 
 const goToRoute = () => {
+  // Устанавливаем selectedRoute перед переходом на страницу деталей
+  apiStore.setSelectedRoute(props.route.url, props.route.method)
+  apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
+
   router.push({
     name: 'route-detail',
     params: {
@@ -111,12 +168,18 @@ const goToRoute = () => {
 
 <template>
   <div
-    class="route-item border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 transition-shadow duration-200 fade-in"
+    :class="[
+      'route-item border rounded-lg transition-shadow duration-200 fade-in scroll-mt-24',
+      'bg-white dark:bg-gray-800 dark:border-gray-700',
+    ]"
     :data-method="isWebSocket ? 'ws' : route.method"
   >
     <!-- Collapsed Header -->
     <div
-      class="route-collapsed p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+      :class="[
+        'route-collapsed p-4 cursor-pointer transition-colors duration-200',
+        'hover:bg-gray-50 dark:hover:bg-gray-700',
+      ]"
       @click="toggleExpanded"
     >
       <div class="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-0 lg:justify-between">
@@ -192,7 +255,10 @@ const goToRoute = () => {
     </div>
 
     <!-- Expanded Details -->
-    <div v-show="isExpanded" class="route-details expanded px-4 pb-4">
+    <div
+      v-show="isExpanded"
+      class="route-details expanded px-4 pb-4"
+    >
       <div class="flex flex-col lg:grid lg:grid-cols-5 gap-6">
         <div class="space-y-4 lg:col-span-2">
           <div>
@@ -525,8 +591,32 @@ const goToRoute = () => {
         </div>
       </div>
 
+      <!-- Duplicate Test Button -->
+      <div class="flex justify-center mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <button
+          v-if="!isWebSocket"
+          @click="toggleTestForm"
+          class="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-green-300 focus:outline-none flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          Test API
+        </button>
+      </div>
+
       <!-- Test Form Section -->
-      <TestForm v-if="showTestForm && !isWebSocket" :route="route" :group-prefix="groupPrefix" />
+      <TestForm
+        v-if="showTestForm && !isWebSocket"
+        ref="testFormRef"
+        :route="route"
+        :group-prefix="groupPrefix"
+      />
     </div>
   </div>
 </template>
