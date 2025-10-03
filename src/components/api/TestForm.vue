@@ -49,7 +49,7 @@ const buildUrl = () => {
       url = url.replace(`:${key}`, value)
     }
   })
-  return url
+  return `/${apiStore.pathPrefix}/${url}`
 }
 
 const sendRequest = async () => {

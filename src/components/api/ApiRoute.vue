@@ -36,7 +36,7 @@ const fullUrl = computed(() => {
     return props.route.url
   }
   const cleanUrl = props.route.url.startsWith('/') ? props.route.url : `/${props.route.url}`
-  return cleanUrl
+  return `/${apiStore.pathPrefix}${cleanUrl}`
 })
 
 const parameters = computed(() => extractParameters(props.route.url))

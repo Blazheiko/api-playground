@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { ApiGroup } from '@/stores/api'
 import { formatRateLimit } from '@/utils/apiHelpers'
 import ApiRoute from './ApiRoute.vue'
+import { useApiStore } from '@/stores/api'
 
 interface Props {
   group: ApiGroup
@@ -12,6 +13,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
+
+const apiStore = useApiStore()
 </script>
 
 <template>
@@ -29,20 +32,28 @@ const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
           </h3>
           <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <span class="font-medium whitespace-nowrap">Prefix:</span>
+              <span class="font-medium whitespace-nowrap">Global Prefix:</span>
               <code
-                class="bg-white dark:bg-gray-800 px-2 py-1 rounded text-primary-700 dark:text-primary-400 break-all"
+                class="bg-white dark:bg-gray-800 px-2 py-1 rounded text-primary-700 dark:text-primary-400 break-all shadow-sm"
+              >
+                /{{ apiStore.pathPrefix }}
+              </code>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <span class="font-medium whitespace-nowrap">Group Prefix:</span>
+              <code
+                class="bg-white dark:bg-gray-800 px-2 py-1 rounded text-primary-700 dark:text-primary-400 break-all shadow-sm"
               >
                 /{{ group.prefix }}
               </code>
             </div>
             <div
               v-if="group.middlewares"
-              class="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
+              class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"
             >
               <span class="font-medium whitespace-nowrap">Middlewares:</span>
               <code
-                class="bg-white dark:bg-gray-800 px-2 py-1 rounded text-orange-700 dark:text-orange-400 break-all flex-1 min-w-0"
+                class="bg-white dark:bg-gray-800 px-2 py-1 rounded text-orange-700 dark:text-orange-400 break-all flex-1 min-w-0 shadow-sm"
               >
                 {{ group.middlewares.join(', ') }}
               </code>
@@ -53,7 +64,7 @@ const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
             >
               <span class="font-medium whitespace-nowrap">Rate Limit:</span>
               <span
-                class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-mono whitespace-nowrap"
+                class="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-mono whitespace-nowrap shadow-sm"
               >
                 {{ groupRateLimit.formatted }}
               </span>
@@ -61,10 +72,14 @@ const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
           </div>
         </div>
         <div class="text-center sm:text-right flex-shrink-0 self-start sm:self-center">
-          <div class="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400">
+          <div
+            class="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm"
+          >
             {{ group.group.length }}
           </div>
-          <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">endpoints</div>
+          <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 drop-shadow-sm">
+            endpoints
+          </div>
         </div>
       </div>
     </div>

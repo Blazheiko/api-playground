@@ -69,6 +69,7 @@ export const useApiStore = defineStore('api', () => {
   const validationSchemas = ref<Record<string, ValidationSchema>>({})
   const responseTypes = ref<Record<string, ResponseType>>({})
   const handlerTypeMapping = ref<Record<string, string>>({})
+  const pathPrefix = ref<string>('')
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const currentRouteType = ref<'http' | 'ws'>('http')
@@ -137,6 +138,7 @@ export const useApiStore = defineStore('api', () => {
       validationSchemas.value = data.validationSchemas || {}
       responseTypes.value = data.responseTypes || {}
       handlerTypeMapping.value = data.handlerTypeMapping || {}
+      pathPrefix.value = data.pathPrefix || ''
 
       console.log('📘 API Documentation Loaded:', {
         httpRouteGroups: httpRouteGroups.value.length,
@@ -278,6 +280,7 @@ export const useApiStore = defineStore('api', () => {
     validationSchemas,
     responseTypes,
     handlerTypeMapping,
+    pathPrefix,
     isLoading,
     error,
     currentRouteType,
