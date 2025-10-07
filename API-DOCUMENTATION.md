@@ -1,90 +1,90 @@
 # API Documentation - Vue 3 Application
 
-Это приложение Vue 3 для отображения и тестирования API маршрутов. Оно автоматически загружает информацию о маршрутах с сервера и предоставляет интерактивный интерфейс для их просмотра и тестирования.
+This is a Vue 3 application for displaying and testing API routes. It automatically loads route information from the server and provides an interactive interface for browsing and testing.
 
-## Структура проекта
+## Project Structure
 
 ```
 src/
 ├── assets/
-│   ├── api-doc.css       # Стили для документации API
-│   ├── base.css          # Базовые стили
-│   └── main.css          # Главный файл стилей
+│   ├── api-doc.css       # Styles for API documentation
+│   ├── base.css          # Base styles
+│   └── main.css          # Main stylesheet
 ├── components/
 │   └── api/
-│       ├── ApiHeader.vue     # Хедер с поиском и переключением темы
-│       ├── ApiFilters.vue    # Фильтры HTTP/WS маршрутов
-│       ├── ApiGroup.vue      # Группа маршрутов
-│       ├── ApiRoute.vue      # Отдельный маршрут с деталями
-│       └── TestForm.vue      # Форма для тестирования API
+│       ├── ApiHeader.vue     # Header with search and theme toggle
+│       ├── ApiFilters.vue    # Filters for HTTP/WS routes
+│       ├── ApiGroup.vue      # Route group
+│       ├── ApiRoute.vue      # Single route with details
+│       └── TestForm.vue      # Form for API testing
 ├── composables/
-│   └── useTheme.ts       # Composable для работы с темой
+│   └── useTheme.ts       # Composable for theme handling
 ├── stores/
-│   └── api.ts            # Pinia store для управления данными API
+│   └── api.ts            # Pinia store for API data management
 ├── utils/
-│   └── apiHelpers.ts     # Вспомогательные функции
+│   └── apiHelpers.ts     # Helper functions
 ├── views/
-│   ├── ApiHomeView.vue       # Главная страница со всеми маршрутами
-│   └── RouteDetailView.vue   # Страница детального просмотра маршрута
+│   ├── ApiHomeView.vue       # Main page with all routes
+│   └── RouteDetailView.vue   # Detailed route page
 ├── router/
-│   └── index.ts          # Конфигурация Vue Router
-├── App.vue               # Корневой компонент
-└── main.ts               # Точка входа приложения
+│   └── index.ts          # Vue Router configuration
+├── App.vue               # Root component
+└── main.ts               # Application entry point
 ```
 
-## Основные возможности
+## Key Features
 
-### 1. Отображение групп маршрутов
+### 1. Route Grouping
 
-- Группировка маршрутов по префиксам
-- Отображение количества endpoints в каждой группе
-- Информация о middlewares и rate limits группы
+- Group routes by prefix
+- Show number of endpoints per group
+- Display group middlewares and rate limits
 
-### 2. Детальная информация о маршруте
+### 2. Route Details
 
-- HTTP метод и URL
-- Описание маршрута
-- Параметры URL
-- Validation schema (схема валидации входящих данных)
+- HTTP method and URL
+- Route description
+- URL parameters
+- Validation schema for incoming data
 - Request body schema
-- Response format с примерами
+- Response format with examples
 - Rate limits
 - Middlewares
 
-### 3. Тестирование API
+### 3. API Testing
 
-- Интерактивная форма для отправки запросов
-- Поддержка параметров URL
-- Настройка заголовков (Headers)
-- Отправка тела запроса (Body) для POST/PUT/PATCH
-- Валидация JSON в реальном времени
-- Отправка множественных запросов для нагрузочного тестирования
-- Детальный вывод результатов с временем ответа
-- Статистика для множественных запросов
+- Interactive request form
+- URL parameter support
+- Headers configuration
+- Request body sending for POST/PUT/PATCH
+- Real-time JSON validation
+- Multiple requests for load testing
+- Detailed result output with response time
+- Aggregated stats for multiple requests
 
-### 4. Дополнительные функции
+### 4. Extra Features
 
-- Поиск по маршрутам
-- Фильтрация HTTP и WebSocket маршрутов
-- Темная/светлая тема
-- Expand/Collapse всех маршрутов
-- Адаптивный дизайн для мобильных устройств
-- Роутинг - каждый маршрут имеет свой URL
+- Route search
+- HTTP and WebSocket route filters
+- Dark/Light theme
+- Expand/Collapse all routes
+- Mobile-friendly responsive design
+- Routing: each route has its own URL
 
-## Использование
+## Usage
 
-### Загрузка данных
+### Data Loading
 
-Приложение автоматически загружает данные о маршрутах при запуске из:
+The app automatically loads route data at startup from:
 
 ```
 GET /api/doc/routes
 ```
 
-**Важно:** Убедитесь, что ваш API сервер запущен на `http://127.0.0.1:8088`.
-Vite dev сервер автоматически проксирует запросы `/api/*` на `http://127.0.0.1:8088`.
+**Important:** Ensure your API server is running at `http://127.0.0.1:8088`.
+The Vite dev server automatically proxies `/api/*` requests to `http://127.0.0.1:8088`.
 
-Ожидаемый формат ответа:
+Expected response format:
 
 ```json
 {
@@ -144,37 +144,37 @@ Vite dev сервер автоматически проксирует запро
 }
 ```
 
-### Навигация
+### Navigation
 
-- **Главная страница** (`/`) - список всех групп маршрутов
-- **Детальная страница маршрута** (`/route/:groupIndex/:routeIndex`) - подробная информация о конкретном маршруте
+- **Home** (`/`) - list of all route groups
+- **Route details** (`/route/:groupIndex/:routeIndex`) - detailed info for a specific route
 
-### Работа с компонентами
+### Working with Components
 
 #### ApiStore (Pinia)
 
-Глобальное хранилище для управления данными:
+Global store for managing data:
 
 ```typescript
 import { useApiStore } from '@/stores/api'
 
 const apiStore = useApiStore()
 
-// Загрузка данных
+// Load data
 await apiStore.fetchRoutes()
 
-// Фильтрация
-apiStore.setRouteType('http') // или 'ws'
+// Filtering
+apiStore.setRouteType('http') // or 'ws'
 apiStore.setSearchTerm('users')
 
-// Доступ к данным
+// Access data
 apiStore.filteredGroups
 apiStore.currentRouteGroups
 ```
 
 #### useTheme Composable
 
-Управление темой приложения:
+App theme management:
 
 ```typescript
 import { useTheme } from '@/composables/useTheme'
@@ -182,37 +182,37 @@ import { useTheme } from '@/composables/useTheme'
 const { isDark, toggleTheme } = useTheme()
 ```
 
-## Технологический стек
+## Tech Stack
 
-- **Vue 3** - Composition API с `<script setup>`
-- **TypeScript** - Типизация
-- **Pinia** - Управление состоянием
-- **Vue Router** - Роутинг
-- **Tailwind CSS** - Стилизация
-- **Vite** - Сборка и dev-сервер
+- **Vue 3** - Composition API with `<script setup>`
+- **TypeScript** - Type safety
+- **Pinia** - State management
+- **Vue Router** - Routing
+- **Tailwind CSS** - Styling
+- **Vite** - Bundler and dev server
 
-## Запуск проекта
+## Run the Project
 
 ```bash
-# Установка зависимостей
+# Install dependencies
 npm install
 
-# Запуск dev сервера
+# Start dev server
 npm run dev
 
-# Сборка для production
+# Build for production
 npm run build
 
-# Проверка типов
+# Type checking
 npm run type-check
 
-# Линтинг
+# Linting
 npm run lint
 ```
 
-## Настройка API endpoint
+## Configure API endpoint
 
-Если ваш API находится по другому адресу, измените URL в файле `src/stores/api.ts`:
+If your API is hosted elsewhere, update the URL in `src/stores/api.ts`:
 
 ```typescript
 async function fetchRoutes() {
@@ -221,41 +221,41 @@ async function fetchRoutes() {
 }
 ```
 
-## Особенности реализации
+## Implementation Notes
 
-### Компонентная архитектура
+### Component Architecture
 
-Приложение разделено на переиспользуемые компоненты:
+The app is split into reusable components:
 
-- `ApiHeader` - независимый хедер
-- `ApiFilters` - фильтры с событиями
-- `ApiGroup` - контейнер для группы маршрутов
-- `ApiRoute` - самодостаточный компонент маршрута
-- `TestForm` - форма тестирования с валидацией
+- `ApiHeader` - standalone header
+- `ApiFilters` - filters with events
+- `ApiGroup` - container for a group of routes
+- `ApiRoute` - self-contained route component
+- `TestForm` - testing form with validation
 
-### Глобальное состояние
+### Global State
 
-Вся информация о маршрутах хранится в Pinia store, что позволяет:
+All route information is stored in a Pinia store, which allows:
 
-- Централизованно управлять данными
-- Избежать prop drilling
-- Легко масштабировать приложение
+- Centralized data management
+- Avoiding prop drilling
+- Easy app scaling
 
-### Роутинг
+### Routing
 
-Каждый маршрут API имеет свой URL в приложении:
+Each API route has its own URL in the app:
 
-- Можно делиться ссылками на конкретные маршруты
-- Удобная навигация с помощью браузерной истории
+- Share links to specific routes
+- Convenient navigation via browser history
 
-### Адаптивность
+### Responsiveness
 
-Приложение полностью адаптивно:
+The application is fully responsive:
 
-- Mobile-first подход
-- Touch-friendly интерфейс
-- Оптимизация для разных размеров экранов
+- Mobile-first approach
+- Touch-friendly interface
+- Optimized for various screen sizes
 
-## Поддержка
+## Support
 
-Для вопросов и предложений создавайте issues в репозитории проекта.
+For questions and suggestions, please open issues in the project repository.

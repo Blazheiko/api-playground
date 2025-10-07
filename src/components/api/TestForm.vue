@@ -30,6 +30,19 @@ const isLoading = ref(false)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const testResult = ref<any>(null)
 
+// Готовим данные ответа для отображения
+const responseBodyRaw = computed(() => {
+  const value = testResult.value
+  if (!value) return undefined
+  return value.firstResult?.data ?? value.data
+})
+
+const responseBodyDisplay = computed(() => {
+  const data = responseBodyRaw.value
+  if (data === undefined) return ''
+  return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+})
+
 const validateHeaders = () => {
   const result = validateJSON(headers.value)
   headersError.value = result.error || ''
@@ -86,6 +99,8 @@ const sendRequest = async () => {
           fetchOptions.body = JSON.stringify(requestBody)
         }
 
+        console.log('fetchOptions', fetchOptions)
+
         const response = await fetch(finalUrl, fetchOptions)
         const endTime = Date.now()
         const responseTime = endTime - startTime
@@ -93,12 +108,16 @@ const sendRequest = async () => {
 
         let responseData
         const contentType = response.headers.get('content-type')
+        console.log('contentType', contentType)
 
-        if (contentType && contentType.includes('application/json')) {
+        if (contentType && contentType.toLowerCase().includes('application/json')) {
           responseData = await response.json()
         } else {
           responseData = await response.text()
         }
+        console.log('response', response)
+        console.log('responseData', responseData)
+
 
         results.push({
           success: response.ok,
@@ -174,7 +193,9 @@ const sendRequest = async () => {
       }
     }
   } catch (error) {
+    console.error(error)
     testResult.value = {
+      success: false,
       error: true,
       message: 'Network error or request failed',
       details: error instanceof Error ? error.message : 'Unknown error',
@@ -349,7 +370,7 @@ const clearResult = () => {
             </p>
           </div>
 
-          <!-- Success Display -->
+          <!-- HTTP Response Display (for both successful and failed HTTP requests) -->
           <div v-else class="space-y-4">
             <!-- Statistics (for multiple requests) -->
             <div
@@ -515,8 +536,8 @@ const clearResult = () => {
               </div>
             </details>
 
-            <!-- Response Body -->
-            <div>
+            <!-- Response Body - показывается для всех HTTP ответов (успешных и неуспешных) -->
+            <div v-if="testResult.data !== undefined || testResult.firstResult?.data !== undefined">
               <h6
                 class="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
               >
@@ -530,9 +551,9 @@ const clearResult = () => {
               </h6>
               <pre
                 class="text-sm bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-3 rounded border dark:border-gray-600 overflow-x-auto max-h-96 overflow-y-auto"
-              ><code>{{ typeof (testResult.firstResult?.data || testResult.data) === 'string'
-                  ? (testResult.firstResult?.data || testResult.data)
-                  : JSON.stringify(testResult.firstResult?.data || testResult.data, null, 2) }}</code></pre>
+              ><code>{{ responseBodyDisplay }}
+                </code>
+              </pre>
             </div>
           </div>
         </div>

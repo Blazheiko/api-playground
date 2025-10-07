@@ -1,8 +1,8 @@
-# Структура навигации API Documentation
+# API Documentation Navigation Structure
 
-## Обзор
+## Overview
 
-Приложение использует трехколоночный layout, вдохновленный документацией Prisma:
+The application uses a three-column layout inspired by Prisma docs:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -21,101 +21,101 @@
 └──────────┴────────────────────────────┴──────────────────┘
 ```
 
-## Компоненты
+## Components
 
-### 1. **SiteNavigation.vue** (Левая панель)
+### 1. **SiteNavigation.vue** (Left panel)
 
-**Расположение:** Слева, фиксированная ширина 256px (w-64)
+**Placement:** Left, fixed width 256px (w-64)
 
-**Функционал:**
+**Functionality:**
 
-- Дерево групп API маршрутов
-- Переключатель HTTP / WebSocket
-- Разворачивание/сворачивание групп
-- Список маршрутов внутри каждой группы
-- Навигация с автоскроллом к выбранному маршруту
-- Переключатель темной/светлой темы
+- Tree of API route groups
+- HTTP / WebSocket toggle
+- Expand/Collapse groups
+- List of routes within each group
+- Auto-scroll navigation to the selected route
+- Theme toggle
 
-**Адаптивность:**
+**Responsiveness:**
 
-- Скрыта на экранах < XL (1280px)
-- Видна на экранах XL+ (1280px+)
+- Hidden on screens < XL (1280px)
+- Visible on XL+ (1280px+)
 
-**Особенности:**
+**Highlights:**
 
-- Компактное дерево с иконками стрелок
-- Цветовая индикация HTTP методов (GET, POST, PUT, DELETE и т.д.)
-- Подсветка активного элемента
-- Счетчик маршрутов для каждой группы
+- Compact tree with arrow icons
+- Color coding for HTTP methods (GET, POST, PUT, DELETE, etc.)
+- Active item highlight
+- Route counter per group
 
-### 2. **OnThisPage.vue** (Правая панель)
+### 2. **OnThisPage.vue** (Right panel)
 
-**Расположение:** Справа, фиксированная ширина 256px (w-64)
+**Placement:** Right, fixed width 256px (w-64)
 
-**Функционал:**
+**Functionality:**
 
-- Автоматически генерируемое содержание страницы
-- Список всех видимых групп и маршрутов
-- Подсветка текущего активного раздела при скролле
-- Навигация с автоскроллом к выбранному элементу
-- Статистика (количество групп и маршрутов)
+- Auto-generated table of contents
+- List of all visible groups and routes
+- Highlight current active section while scrolling
+- Auto-scroll navigation to the selected item
+- Stats (number of groups and routes)
 
-**Адаптивность:**
+**Responsiveness:**
 
-- Скрыта на экранах < 2XL (1536px)
-- Видна на экранах 2XL+ (1536px+)
+- Hidden on screens < 2XL (1536px)
+- Visible on 2XL+ (1536px+)
 
-**Особенности:**
+**Highlights:**
 
-- Использует IntersectionObserver для отслеживания активного раздела
-- Двухуровневая структура (группы → маршруты)
-- Цветовая индикация HTTP методов
+- Uses IntersectionObserver to track active section
+- Two-level structure (groups → routes)
+- HTTP method color coding
 
-### 3. **MobileNavigation.vue** (Мобильное меню)
+### 3. **MobileNavigation.vue** (Mobile menu)
 
-**Расположение:** Выдвижная панель слева
+**Placement:** Slide-out panel from the left
 
-**Функционал:**
+**Functionality:**
 
-- Кнопка гамбургер-меню в левом верхнем углу
-- Выдвижное меню с полным деревом навигации
-- Переключатель HTTP / WebSocket
-- Дерево групп и маршрутов (как в SiteNavigation)
-- Переключатель темы
-- Автозакрытие при выборе маршрута
+- Hamburger button in the top-left corner
+- Slide-out menu with the full navigation tree
+- HTTP / WebSocket toggle
+- Groups and routes tree (same as SiteNavigation)
+- Theme toggle
+- Auto-close when a route is selected
 
-**Адаптивность:**
+**Responsiveness:**
 
-- Видна только на экранах < XL (1280px)
-- Полноценная замена левой панели для мобильных устройств
+- Only visible on screens < XL (1280px)
+- Full replacement for the left panel on mobile
 
-### 4. **ApiGroup.vue** (Основной контент)
+### 4. **ApiGroup.vue** (Main content)
 
-**Обновления:**
+**Updates:**
 
-- Добавлены ID для групп: `id="group-{groupIndex}"`
-- Добавлен класс `scroll-mt-24` для корректного скролла с учетом header
+- Added IDs for groups: `id="group-{groupIndex}"`
+- Added `scroll-mt-24` class for proper scrolling with fixed header
 
-### 5. **ApiRoute.vue** (Основной контент)
+### 5. **ApiRoute.vue** (Main content)
 
-**Обновления:**
+**Updates:**
 
-- ID устанавливается родителем через атрибут `id="route-{groupIndex}-{routeIndex}"`
-- Добавлен класс `scroll-mt-24` для корректного скролла
+- ID is set by the parent via `id="route-{groupIndex}-{routeIndex}"`
+- Added `scroll-mt-24` class for proper scrolling
 
-## Адаптивные брейкпоинты
+## Responsive Breakpoints
 
-| Размер экрана  | Левая панель | Правая панель | Мобильное меню |
-| -------------- | ------------ | ------------- | -------------- |
-| < XL (1280px)  | ❌ Скрыта    | ❌ Скрыта     | ✅ Показано    |
-| XL+ (1280px+)  | ✅ Показана  | ❌ Скрыта     | ❌ Скрыто      |
-| 2XL+ (1536px+) | ✅ Показана  | ✅ Показана   | ❌ Скрыто      |
+| Screen size    | Left panel | Right panel | Mobile menu |
+| -------------- | ---------- | ----------- | ----------- |
+| < XL (1280px)  | ❌ Hidden  | ❌ Hidden   | ✅ Shown    |
+| XL+ (1280px+)  | ✅ Shown   | ❌ Hidden   | ❌ Hidden   |
+| 2XL+ (1536px+) | ✅ Shown   | ✅ Shown    | ❌ Hidden   |
 
-## Функционал навигации
+## Navigation Functionality
 
-### Скролл к элементам
+### Scroll to elements
 
-Все компоненты навигации используют единую систему скролла:
+All navigation components use a unified scrolling system:
 
 ```typescript
 const scrollToRoute = (groupIndex: number, routeIndex: number) => {
@@ -125,7 +125,7 @@ const scrollToRoute = (groupIndex: number, routeIndex: number) => {
     if (mainContent) {
       const elementTop = element.offsetTop
       mainContent.scrollTo({
-        top: elementTop - 100, // Отступ для header
+        top: elementTop - 100, // Offset for the fixed header
         behavior: 'smooth',
       })
     }
@@ -133,9 +133,9 @@ const scrollToRoute = (groupIndex: number, routeIndex: number) => {
 }
 ```
 
-### Отслеживание активного раздела
+### Track active section
 
-Компонент **OnThisPage** использует IntersectionObserver:
+The **OnThisPage** component uses IntersectionObserver:
 
 ```typescript
 const observer = new IntersectionObserver(
@@ -154,9 +154,9 @@ const observer = new IntersectionObserver(
 )
 ```
 
-## Стили и оформление
+## Styles and Appearance
 
-### Цветовая схема HTTP методов
+### HTTP method color scheme
 
 ```typescript
 const getMethodColor = (method: string) => {
@@ -171,7 +171,7 @@ const getMethodColor = (method: string) => {
 }
 ```
 
-### Плавная прокрутка
+### Smooth scrolling
 
 ```css
 html {
@@ -179,28 +179,28 @@ html {
 }
 
 .scroll-mt-24 {
-  scroll-margin-top: 6rem; /* Отступ для фиксированного header */
+  scroll-margin-top: 6rem; /* Offset for the fixed header */
 }
 ```
 
-### Кастомные скроллбары
+### Custom scrollbars
 
-- Тонкие скроллбары (10px)
-- Темная/светлая тема
-- Плавные переходы
+- Thin scrollbars (10px)
+- Dark/Light theme
+- Smooth transitions
 
-## Улучшения UX
+## UX Improvements
 
-1. **Плавная навигация:** Автоматический скролл к выбранному элементу с анимацией
-2. **Визуальная обратная связь:** Подсветка активного элемента во всех панелях
-3. **Компактность:** Эффективное использование пространства экрана
-4. **Accessibility:** Семантичная разметка, поддержка клавиатурной навигации
-5. **Производительность:** Оптимизированный рендеринг с использованием IntersectionObserver
+1. **Smooth navigation:** Auto-scroll to the selected item with animation
+2. **Visual feedback:** Highlight the active item across panels
+3. **Compactness:** Efficient use of screen space
+4. **Accessibility:** Semantic markup, keyboard navigation support
+5. **Performance:** Optimized rendering using IntersectionObserver
 
-## Технологии
+## Technologies
 
 - **Vue 3** Composition API
 - **TypeScript**
-- **Tailwind CSS** для стилизации
-- **Pinia** для управления состоянием
-- **IntersectionObserver API** для отслеживания видимости элементов
+- **Tailwind CSS** for styling
+- **Pinia** for state management
+- **IntersectionObserver API** for tracking element visibility

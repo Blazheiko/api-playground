@@ -1,35 +1,35 @@
 # API Documentation Playground
 
-Vue 3 приложение для интерактивного просмотра и тестирования API маршрутов.
+Vue 3 application for interactive browsing and testing of API routes.
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-### Предварительные требования
+### Prerequisites
 
-1. **Node.js** 20.19.0 или выше
-2. **API сервер** должен быть запущен на `http://127.0.0.1:8088`
+1. **Node.js** 20.19.0 or higher
+2. **API server** running at `http://127.0.0.1:8088`
 
-### Установка и запуск
+### Install and Run
 
 ```bash
-# Установка зависимостей
+# Install dependencies
 npm install
 
-# Запуск dev сервера
+# Start the dev server
 npm run dev
 ```
 
-Приложение будет доступно по адресу `http://localhost:5173`
+The app will be available at `http://localhost:5173`
 
-## 📋 Требования к API
+## 📋 API Requirements
 
-API сервер должен предоставлять endpoint:
+The API server must expose the following endpoint:
 
 ```
 GET http://127.0.0.1:8088/api/doc/routes
 ```
 
-### Формат ответа
+### Response Format
 
 ```json
 {
@@ -77,17 +77,17 @@ GET http://127.0.0.1:8088/api/doc/routes
 }
 ```
 
-## ✨ Возможности
+## ✨ Features
 
-- 📚 Автоматическая загрузка и отображение API маршрутов
-- 🔍 Поиск по маршрутам
-- 🌓 Темная/светлая тема
-- 🧪 Интерактивное тестирование API
-- 📊 Детальная информация о валидации и ответах
-- 🔗 Уникальные URL для каждого маршрута
-- 📱 Адаптивный дизайн
+- 📚 Automatic loading and rendering of API routes
+- 🔍 Search across routes
+- 🌓 Dark/Light theme
+- 🧪 Interactive API testing
+- 📊 Detailed validation and response info
+- 🔗 Unique URLs for each route
+- 📱 Responsive design
 
-## 🛠️ Технологии
+## 🛠️ Tech Stack
 
 - Vue 3 (Composition API)
 - TypeScript
@@ -96,21 +96,21 @@ GET http://127.0.0.1:8088/api/doc/routes
 - Tailwind CSS
 - Vite
 
-## 📖 Дополнительная документация
+## 📖 Additional Documentation
 
-Смотрите [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) для подробной документации по структуре проекта и использованию.
+See [API-DOCUMENTATION.md](./API-DOCUMENTATION.md) for detailed project structure and usage.
 
-## 🔧 Настройка
+## 🔧 Configuration
 
-### Изменение API endpoint
+### Changing the API endpoint
 
-Если ваш API находится по другому адресу, измените `target` в `vite.config.ts`:
+If your API is hosted elsewhere, update `target` in `vite.config.ts`:
 
 ```typescript
 server: {
   proxy: {
     '/api': {
-      target: 'http://YOUR_API_URL',  // Замените на ваш URL
+      target: 'http://YOUR_API_URL',  // Replace with your URL
       changeOrigin: true,
       secure: false,
     },
@@ -118,33 +118,33 @@ server: {
 }
 ```
 
-## 📝 Скрипты
+## 📝 Scripts
 
 ```bash
-npm run dev          # Запуск dev сервера
-npm run build        # Сборка для production
-npm run preview      # Предпросмотр production сборки
-npm run type-check   # Проверка типов TypeScript
-npm run lint         # Линтинг кода
-npm run format       # Форматирование кода
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run type-check   # TypeScript type check
+npm run lint         # Lint code
+npm run format       # Format code
 ```
 
-## 🐛 Устранение проблем
+## 🐛 Troubleshooting
 
-### Ошибка "Failed to fetch"
+### Error "Failed to fetch"
 
-Убедитесь, что:
+Make sure that:
 
-1. API сервер запущен на `http://127.0.0.1:8088`
-2. Endpoint `/api/doc/routes` доступен
-3. Dev сервер перезапущен после изменения `vite.config.ts`
+1. The API server runs at `http://127.0.0.1:8088`
+2. The `/api/doc/routes` endpoint is accessible
+3. The dev server was restarted after editing `vite.config.ts`
 
-### Стили не применяются
+### Styles are not applied
 
-1. Убедитесь, что Tailwind CSS установлен
-2. Проверьте, что `tailwind.config.js` создан
-3. Перезапустите dev сервер
+1. Ensure Tailwind CSS is installed
+2. Verify `tailwind.config.js` exists
+3. Restart the dev server
 
-## 📄 Лицензия
+## 📄 License
 
 MIT
