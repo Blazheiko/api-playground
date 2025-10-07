@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useApiStore } from '@/stores/api'
+import { useApiStore } from '@/stores/api-doc'
 import ApiHeader from '@/components/api/ApiHeader.vue'
 import ApiGroup from '@/components/api/ApiGroup.vue'
 import SiteNavigation from '@/components/navigation/SiteNavigation.vue'

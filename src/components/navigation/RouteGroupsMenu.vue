@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useApiStore, type ApiGroup, type ApiRoute } from '@/stores/api'
+import { useApiStore, type ApiGroup, type ApiRoute } from '@/stores/api-doc'
 
 const router = useRouter()
 const apiStore = useApiStore()

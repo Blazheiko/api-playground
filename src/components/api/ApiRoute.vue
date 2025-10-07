@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import type { ApiRoute } from '@/stores/api'
-import { useApiStore } from '@/stores/api'
+import type { ApiRoute } from '@/stores/api-doc'
+import { useApiStore } from '@/stores/api-doc'
 import {
   getMethodClass,
   getTypeClass,
@@ -52,15 +52,11 @@ const handlerName = computed(() => {
   } else if (props.route.handler && typeof props.route.handler === 'object') {
     return props.route.handler.name || 'unknown'
   }
-  return 'Unknown handler'
+  return null
 })
 
 const responseTypeInfo = computed(() => {
-  if (
-    !handlerName.value ||
-    handlerName.value === 'Unknown handler' ||
-    handlerName.value === 'unknown'
-  ) {
+  if (!handlerName.value) {
     return null
   }
 
@@ -87,7 +83,11 @@ const validationSchema = computed(() => {
   return null
 })
 
-const routeRateLimit = computed(() => formatRateLimit(props.route.rateLimit))
+const routeRateLimit = computed(() => {
+  // Приоритет: route.rateLimit > route.groupRateLimit
+  const rateLimit = props.route.rateLimit || props.route.groupRateLimit
+  return formatRateLimit(rateLimit)
+})
 
 const toggleExpanded = () => {
   // Устанавливаем selectedRoute при клике на маршрут
@@ -255,10 +255,7 @@ const goToRoute = () => {
     </div>
 
     <!-- Expanded Details -->
-    <div
-      v-show="isExpanded"
-      class="route-details expanded px-4 pb-4"
-    >
+    <div v-show="isExpanded" class="route-details expanded px-4 pb-4">
       <div class="flex flex-col lg:grid lg:grid-cols-5 gap-6">
         <div class="space-y-4 lg:col-span-2">
           <div>
@@ -284,7 +281,7 @@ const goToRoute = () => {
                   {{ routeRateLimit.formatted }}
                 </span>
                 <span class="text-gray-500 dark:text-gray-400 text-xs">
-                  (overrides group limit)
+                  {{ props.route.rateLimit ? '(overrides group limit)' : '(inherited from group)' }}
                 </span>
               </div>
             </div>

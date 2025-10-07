@@ -39,11 +39,12 @@ export interface ApiRoute {
   url: string
   method: string
   description?: string
-  handler: string | { name: string }
+  handler: string | { name: string } | null
   validator?: string
   middleware?: string
   middlewares?: string[]
   rateLimit?: RateLimit
+  groupRateLimit?: RateLimit
   requestBody?: {
     description?: string
     schema?: ValidationSchema
@@ -132,6 +133,7 @@ export const useApiStore = defineStore('api', () => {
       }
 
       const data = await response.json()
+      console.log('data', data)
 
       httpRouteGroups.value = data.httpRoutes || []
       wsRouteGroups.value = data.wsRoutes || []

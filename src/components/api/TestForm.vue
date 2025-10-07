@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ApiRoute } from '@/stores/api'
-import { useApiStore } from '@/stores/api'
+import type { ApiRoute } from '@/stores/api-doc'
+import { useApiStore } from '@/stores/api-doc'
 import { getDefaultRequestBody, validateJSON } from '@/utils/apiHelpers'
 import { extractParameters } from '@/utils/apiHelpers'
 
@@ -117,7 +117,6 @@ const sendRequest = async () => {
         }
         console.log('response', response)
         console.log('responseData', responseData)
-
 
         results.push({
           success: response.ok,

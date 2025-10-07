@@ -1,4 +1,4 @@
-import type { ValidationSchema, ResponseType, RateLimit, RouteParameter } from '@/stores/api'
+import type { ValidationSchema, ResponseType, RateLimit, RouteParameter } from '@/stores/api-doc'
 
 export function getMethodClass(method: string): string {
   return `method-${method.toLowerCase()}`

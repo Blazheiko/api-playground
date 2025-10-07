@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useApiStore } from '@/stores/api'
+import { useApiStore } from '@/stores/api-doc'
 
 const apiStore = useApiStore()
 

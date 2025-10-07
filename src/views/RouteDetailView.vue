@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useApiStore } from '@/stores/api'
+import { useApiStore } from '@/stores/api-doc'
 import ApiHeader from '@/components/api/ApiHeader.vue'
 import ApiRoute from '@/components/api/ApiRoute.vue'
 

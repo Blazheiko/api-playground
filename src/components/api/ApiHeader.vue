@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTheme } from '@/composables/useTheme'
-import { useApiStore } from '@/stores/api'
+import { useApiStore } from '@/stores/api-doc'
 
 const { isDark, toggleTheme } = useTheme()
 const apiStore = useApiStore()

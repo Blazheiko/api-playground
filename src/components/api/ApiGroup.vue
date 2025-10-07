@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ApiGroup } from '@/stores/api'
+import type { ApiGroup } from '@/stores/api-doc'
 import { formatRateLimit } from '@/utils/apiHelpers'
 import ApiRoute from './ApiRoute.vue'
-import { useApiStore } from '@/stores/api'
+import { useApiStore } from '@/stores/api-doc'
 
 interface Props {
   group: ApiGroup
