@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
 import { getDefaultRequestBody, validateJSON } from '@/utils/apiHelpers'
@@ -203,7 +203,41 @@ const sendRequest = async () => {
     }
   } finally {
     isLoading.value = false
+
+    // Прокручиваем к блоку Response после получения ответа
+    if (testResult.value) {
+      await scrollToResponse()
+    }
   }
+}
+
+const scrollToResponse = async () => {
+  await nextTick() // Ждем обновления DOM
+
+  // Небольшая задержка для полного рендеринга блока Response
+  setTimeout(() => {
+    const responseElement = document.getElementById('response-section')
+    if (responseElement) {
+      // Используем простой scrollIntoView с настройками
+      responseElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      })
+
+      // Дополнительно корректируем позицию с учетом offset
+      setTimeout(() => {
+        const mainContent = document.querySelector('main')
+        if (mainContent) {
+          const currentScrollTop = mainContent.scrollTop
+          mainContent.scrollTo({
+            top: Math.max(0, currentScrollTop - 100),
+            behavior: 'smooth',
+          })
+        }
+      }, 100)
+    }
+  }, 150)
 }
 
 const clearResult = () => {
@@ -212,7 +246,7 @@ const clearResult = () => {
 </script>
 
 <template>
-  <div class="test-form-section flex-1">
+  <div id="test-form" class="test-form-section flex-1">
     <div class="border-t dark:border-gray-600 pt-3 mt-3">
       <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
         <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,7 +354,7 @@ const clearResult = () => {
       </form>
 
       <!-- Response Section -->
-      <div v-if="testResult" class="test-result-section mt-4">
+      <div id="response-section" v-if="testResult" class="test-result-section mt-4">
         <div class="border-t dark:border-gray-600 pt-3">
           <h6 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
             <svg

@@ -247,13 +247,13 @@ export const useApiStore = defineStore('api', () => {
     collapseAllRoutes()
 
     // Ждем следующий тик для обновления DOM
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     // Затем разворачиваем нужный маршрут
     setExpandedRoute(groupIndex, routeIndex)
 
     // Ждем еще один тик для полного обновления DOM
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     // Теперь выполняем скролл к элементу
     const targetElementId = elementId || `route-${groupIndex}-${routeIndex}`
@@ -263,17 +263,24 @@ export const useApiStore = defineStore('api', () => {
   function scrollToElement(elementId: string, offset: number = 100) {
     const element = document.getElementById(elementId)
     if (element) {
-      const mainContent = document.querySelector('main')
-      if (mainContent) {
-        const elementTop = element.offsetTop
-        mainContent.scrollTo({
-          top: elementTop - offset,
-          behavior: 'smooth',
-        })
-      } else {
-        // Fallback для случаев, когда main не найден
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
+      // Сначала пробуем простой scrollIntoView с настройками
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      })
+
+      // Дополнительно корректируем позицию с учетом offset
+      setTimeout(() => {
+        const mainContent = document.querySelector('main')
+        if (mainContent) {
+          const currentScrollTop = mainContent.scrollTop
+          mainContent.scrollTo({
+            top: Math.max(0, currentScrollTop - offset),
+            behavior: 'smooth',
+          })
+        }
+      }, 100)
     }
   }
 

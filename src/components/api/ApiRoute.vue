@@ -112,34 +112,29 @@ const toggleTestForm = async () => {
 }
 
 const scrollToTestForm = () => {
-  if (testFormRef.value && testFormRef.value.$el) {
-    const element = testFormRef.value.$el
-    const mainContent = document.querySelector('main')
+  // Сначала пробуем найти форму по ID
+  const testFormElement = document.getElementById('test-form')
+  const element = testFormElement || (testFormRef.value && testFormRef.value.$el)
 
-    if (mainContent) {
-      // Get element position relative to main container
-      const elementRect = element.getBoundingClientRect()
-      const mainRect = mainContent.getBoundingClientRect()
+  if (element) {
+    // Используем простой scrollIntoView с настройками
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+      inline: 'nearest',
+    })
 
-      // Calculate position relative to main container
-      const elementTop = elementRect.top - mainRect.top + mainContent.scrollTop
-
-      // Calculate optimal scroll position
-      // Show form at the top of visible area with small offset
-      const targetScrollTop = elementTop - 80
-
-      mainContent.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: 'smooth',
-      })
-    } else {
-      // Fallback if main is not found
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
-      })
-    }
+    // Дополнительно корректируем позицию с учетом offset
+    setTimeout(() => {
+      const mainContent = document.querySelector('main')
+      if (mainContent) {
+        const currentScrollTop = mainContent.scrollTop
+        mainContent.scrollTo({
+          top: Math.max(0, currentScrollTop - 80),
+          behavior: 'smooth',
+        })
+      }
+    }, 100)
   }
 }
 
@@ -160,6 +155,7 @@ const goToRoute = () => {
 
 <template>
   <div
+    :id="`route-${groupIndex}-${routeIndex}`"
     :class="[
       'route-item border rounded-lg transition-shadow duration-200 fade-in scroll-mt-24',
       'bg-white dark:bg-gray-800 dark:border-gray-700',
@@ -463,7 +459,7 @@ const goToRoute = () => {
                 </h6>
                 <pre
                   class="text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded-md border dark:border-gray-600 overflow-x-auto"
-                ><code>{{ JSON.stringify({ status: "unauthorized", message: 'Unauthorized' }, null, 2) }}</code></pre>
+                ><code>{{ JSON.stringify({ status: "unauthorized", message: 'Session expired or not found' }, null, 2) }}</code></pre>
               </div>
             </div>
 

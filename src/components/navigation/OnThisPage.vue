@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount, unref } from 'vue'
+import { ref, computed, watch, onMounted, unref } from 'vue'
 import { useApiStore } from '@/stores/api-doc'
 
 const apiStore = useApiStore()
@@ -16,7 +16,6 @@ interface TocItem {
 
 const tocItems = ref<TocItem[]>([])
 const activeId = ref<string>('')
-const observer = ref<IntersectionObserver | null>(null)
 
 const currentGroups = computed(() => {
   // Если есть выбранный маршрут, показываем только его группу
@@ -103,28 +102,25 @@ const scrollToElement = async (id: string) => {
 
   const element = document.getElementById(id)
   if (element) {
-    const mainContent = document.querySelector('main')
-    if (mainContent) {
-      const elementTop = element.offsetTop
-      mainContent.scrollTo({
-        top: elementTop - 100,
-        behavior: 'smooth',
-      })
-    }
-  }
-}
+    // Используем простой scrollIntoView с настройками
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+      inline: 'nearest',
+    })
 
-// Отслеживание скролла для подсветки активного элемента
-const setupIntersectionObserver = () => {
-  // Очищаем предыдущий observer
-  if (observer.value) {
-    observer.value.disconnect()
+    // Дополнительно корректируем позицию с учетом offset
+    setTimeout(() => {
+      const mainContent = document.querySelector('main')
+      if (mainContent) {
+        const currentScrollTop = mainContent.scrollTop
+        mainContent.scrollTo({
+          top: Math.max(0, currentScrollTop - 100),
+          behavior: 'smooth',
+        })
+      }
+    }, 100)
   }
-
-  // Полностью отключаем IntersectionObserver для автоматического выбора маршрутов
-  // Маршруты будут выбираться только при явном клике пользователя
-  // Это предотвращает автоматический выбор первого видимого маршрута
-  return
 }
 
 const getMethodColor = (method: string) => {
@@ -142,7 +138,6 @@ watch(
   currentGroups,
   () => {
     generateToc()
-    setupIntersectionObserver()
   },
   { immediate: true },
 )
@@ -159,14 +154,8 @@ watch(
 
 onMounted(() => {
   generateToc()
-  setupIntersectionObserver()
 })
 
-onBeforeUnmount(() => {
-  if (observer.value) {
-    observer.value.disconnect()
-  }
-})
 </script>
 
 <template>
