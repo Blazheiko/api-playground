@@ -46,6 +46,7 @@ export interface ApiRoute {
   middlewares?: string[]
   rateLimit?: RateLimit
   groupRateLimit?: RateLimit
+  typeResponse?: string
   requestBody?: {
     description?: string
     schema?: ValidationSchema
@@ -70,7 +71,6 @@ export const useApiStore = defineStore('api', () => {
   const wsRouteGroups = ref<ApiGroup[]>([])
   const validationSchemas = ref<Record<string, ValidationSchema>>({})
   const responseTypes = ref<Record<string, ResponseType>>({})
-  const handlerTypeMapping = ref<Record<string, string>>({})
   const pathPrefix = ref<string>('')
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -140,14 +140,12 @@ export const useApiStore = defineStore('api', () => {
       wsRouteGroups.value = data.wsRoutes || []
       validationSchemas.value = data.validationSchemas || {}
       responseTypes.value = data.responseTypes || {}
-      handlerTypeMapping.value = data.handlerTypeMapping || {}
       pathPrefix.value = data.pathPrefix || ''
 
       console.log('📘 API Documentation Loaded:', {
         httpRouteGroups: httpRouteGroups.value.length,
         wsRouteGroups: wsRouteGroups.value.length,
         responseTypes: Object.keys(responseTypes.value).length,
-        handlerMappings: Object.keys(handlerTypeMapping.value).length,
       })
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load API documentation'
@@ -282,7 +280,6 @@ export const useApiStore = defineStore('api', () => {
     wsRouteGroups,
     validationSchemas,
     responseTypes,
-    handlerTypeMapping,
     pathPrefix,
     isLoading,
     error,

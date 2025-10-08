@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watchEffect } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
@@ -46,37 +46,18 @@ const methodClass = computed(() =>
   isWebSocket.value ? 'method-ws' : getMethodClass(props.route.method),
 )
 
-const handlerName = computed(() => {
-  // Сначала проверяем handler
-  if (typeof props.route.handler === 'string') {
-    return props.route.handler
-  } else if (props.route.handler && typeof props.route.handler === 'object') {
-    return props.route.handler.name || 'unknown'
-  }
-
-  // Fallback на validator, если handler не указан
-  if (props.route.validator) {
-    return props.route.validator
-  }
-
-  return null
-})
-
 const responseTypeInfo = computed(() => {
-  if (!handlerName.value) {
+  if (!props.route.typeResponse) {
     return null
   }
 
-  const typeName = apiStore.handlerTypeMapping[handlerName.value]
-  if (typeName) {
-    const typeData = apiStore.responseTypes[typeName]
+  const typeData = apiStore.responseTypes[props.route.typeResponse]
 
-    if (typeData) {
-      return {
-        name: typeName,
-        data: typeData,
-        hasFields: typeData.fields && Object.keys(typeData.fields).length > 0,
-      }
+  if (typeData) {
+    return {
+      name: props.route.typeResponse,
+      data: typeData,
+      hasFields: typeData.fields && Object.keys(typeData.fields).length > 0,
     }
   }
 
@@ -91,29 +72,13 @@ const validationSchema = computed(() => {
 })
 
 const routeRateLimit = computed(() => {
-  // Приоритет: route.rateLimit > route.groupRateLimit
+  // Priority: route.rateLimit > route.groupRateLimit
   const rateLimit = props.route.rateLimit || props.route.groupRateLimit
   return formatRateLimit(rateLimit)
 })
 
-// Отладка для проверки типов ответов
-watchEffect(() => {
-  if (isExpanded.value && props.route.url.includes('login')) {
-    console.log('🔍 Route Debug:', {
-      url: props.route.url,
-      handler: props.route.handler,
-      validator: props.route.validator,
-      handlerName: handlerName.value,
-      mappedType: handlerName.value ? apiStore.handlerTypeMapping[handlerName.value] : null,
-      responseTypeInfo: responseTypeInfo.value,
-      availableTypes: Object.keys(apiStore.responseTypes).slice(0, 5),
-      availableMappings: Object.keys(apiStore.handlerTypeMapping).slice(0, 5),
-    })
-  }
-})
-
 const toggleExpanded = () => {
-  // Устанавливаем selectedRoute при клике на маршрут
+  // Set selectedRoute when clicking on route
   apiStore.setSelectedRoute(props.route.url, props.route.method)
   apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
 
@@ -129,17 +94,17 @@ const toggleTestForm = async () => {
   showTestForm.value = !showTestForm.value
 
   if (showTestForm.value) {
-    // Если маршрут не развернут, сначала разворачиваем его
+    // If route is not expanded, expand it first
     if (!wasExpanded) {
       apiStore.setExpandedRoute(props.groupIndex, props.routeIndex)
-      // Ждем обновления DOM после разворачивания маршрута
+      // Wait for DOM update after expanding route
       await nextTick()
     }
 
-    // Ждем еще один тик для полного рендеринга формы
+    // Wait another tick for complete form rendering
     await nextTick()
 
-    // Небольшая задержка для завершения анимаций
+    // Small delay to complete animations
     setTimeout(() => {
       scrollToTestForm()
     }, 100)
@@ -152,11 +117,11 @@ const scrollToTestForm = () => {
     const mainContent = document.querySelector('main')
 
     if (mainContent) {
-      // Получаем позицию элемента относительно main контейнера
+      // Get element position relative to main container
       const elementTop = element.offsetTop
 
-      // Вычисляем оптимальную позицию скролла
-      // Показываем форму в верхней части видимой области с небольшим отступом
+      // Calculate optimal scroll position
+      // Show form at the top of visible area with small offset
       const targetScrollTop = elementTop - 100
 
       mainContent.scrollTo({
@@ -164,7 +129,7 @@ const scrollToTestForm = () => {
         behavior: 'smooth',
       })
     } else {
-      // Fallback на случай, если main не найден
+      // Fallback if main is not found
       element.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
@@ -175,7 +140,7 @@ const scrollToTestForm = () => {
 }
 
 const goToRoute = () => {
-  // Устанавливаем selectedRoute перед переходом на страницу деталей
+  // Set selectedRoute before navigating to detail page
   apiStore.setSelectedRoute(props.route.url, props.route.method)
   apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
 
