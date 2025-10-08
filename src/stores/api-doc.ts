@@ -24,11 +24,14 @@ export interface ResponseTypeField {
   example?: unknown
   required?: boolean
   properties?: Record<string, ResponseTypeField>
+  fields?: Record<string, ResponseTypeField>
+  schema?: Record<string, ResponseTypeField>
 }
 
 export interface ResponseType {
-  name?: string
-  fields: Record<string, ResponseTypeField>
+  name: string
+  module: string
+  fields: string // TypeScript code as string
 }
 
 export interface RateLimit {

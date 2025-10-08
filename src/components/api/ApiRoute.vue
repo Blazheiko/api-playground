@@ -8,7 +8,6 @@ import {
   getTypeClass,
   extractParameters,
   formatRateLimit,
-  generateExampleFromType,
 } from '@/utils/apiHelpers'
 import TestForm from './TestForm.vue'
 
@@ -55,9 +54,10 @@ const responseTypeInfo = computed(() => {
 
   if (typeData) {
     return {
-      name: props.route.typeResponse,
-      data: typeData,
-      hasFields: typeData.fields && Object.keys(typeData.fields).length > 0,
+      name: typeData.name,
+      module: typeData.module,
+      fields: typeData.fields, // TypeScript code as string
+      hasFields: typeData.fields && typeData.fields.length > 0,
     }
   }
 
@@ -423,98 +423,28 @@ const goToRoute = () => {
                   <span class="text-sm text-gray-700 dark:text-gray-200 font-semibold">
                     Response Type
                   </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    ({{ responseTypeInfo.module }})
+                  </span>
                 </div>
 
-                <!-- Fields Display with nested support -->
-                <div class="space-y-2 overflow-x-auto">
-                  <template
-                    v-for="(fieldInfo, fieldName) in responseTypeInfo.data.fields"
-                    :key="fieldName"
-                  >
-                    <!-- Main Field -->
-                    <div
-                      class="response-field-item border-l-2 border-gray-200 dark:border-gray-600 pl-3 py-2"
+                <!-- TypeScript Code Display -->
+                <div
+                  class="bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-600 overflow-hidden"
+                >
+                  <div class="px-3 py-2 bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600">
+                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400"
+                      >TypeScript Interface</span
                     >
-                      <div class="flex flex-wrap items-center gap-2 text-sm mb-1">
-                        <span
-                          :class="[
-                            'field-name-badge px-2 py-1 rounded text-xs font-mono font-semibold break-all',
-                            getTypeClass(fieldInfo.type),
-                          ]"
-                        >
-                          {{ fieldName }}
-                        </span>
-                        <span
-                          class="field-type-badge px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
-                        >
-                          {{ fieldInfo.type }}
-                        </span>
-                        <span
-                          :class="[
-                            'text-xs whitespace-nowrap font-medium',
-                            fieldInfo.required
-                              ? 'text-red-500 dark:text-red-400'
-                              : 'text-gray-400 dark:text-gray-500',
-                          ]"
-                        >
-                          {{ fieldInfo.required ? 'required' : 'optional' }}
-                        </span>
-                      </div>
-
-                      <!-- Field Description -->
-                      <div
-                        v-if="fieldInfo.description"
-                        class="field-description text-gray-600 dark:text-gray-400 text-xs break-words mt-1"
-                      >
-                        {{ fieldInfo.description }}
-                      </div>
-
-                      <!-- Field Example -->
-                      <div
-                        v-if="fieldInfo.example !== undefined"
-                        class="field-example text-gray-500 dark:text-gray-500 text-xs mt-1"
-                      >
-                        {{ JSON.stringify(fieldInfo.example) }}
-                      </div>
-
-                      <!-- Nested Properties for Object Type -->
-                      <div
-                        v-if="fieldInfo.type === 'object' && fieldInfo.properties"
-                        class="ml-4 mt-2 space-y-1"
-                      >
-                        <div
-                          v-for="(propInfo, propName) in fieldInfo.properties"
-                          :key="`${fieldName}.${propName}`"
-                          class="flex flex-wrap items-center gap-2 text-xs"
-                        >
-                          <span
-                            :class="[
-                              'field-name-badge px-2 py-0.5 rounded font-mono font-semibold',
-                              getTypeClass(propInfo.type),
-                            ]"
-                          >
-                            {{ propName }}
-                          </span>
-                          <span
-                            class="field-type-badge px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
-                          >
-                            {{ propInfo.type }}
-                          </span>
-                          <span
-                            v-if="propInfo.example !== undefined"
-                            class="field-example text-gray-500 dark:text-gray-500 italic"
-                          >
-                            e.g. {{ JSON.stringify(propInfo.example) }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
+                  </div>
+                  <pre
+                    class="p-4 text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto"
+                  ><code>{{ responseTypeInfo.fields }}</code></pre>
                 </div>
               </div>
 
               <!-- Success/Error Responses -->
-              <div
+              <!-- <div
                 class="p-3 bg-green-50 dark:bg-green-900 dark:bg-opacity-10 rounded-lg border border-green-200 dark:border-green-800"
               >
                 <h6 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">
@@ -522,8 +452,8 @@ const goToRoute = () => {
                 </h6>
                 <pre
                   class="text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded-md border dark:border-gray-600 overflow-x-auto"
-                ><code>{{ JSON.stringify(generateExampleFromType(responseTypeInfo.data), null, 2) }}</code></pre>
-              </div>
+                ><code>{{ JSON.stringify({ status: 200, data: 'Success' }, null, 2) }}</code></pre>
+              </div> -->
 
               <div
                 class="p-3 bg-red-50 dark:bg-red-900 dark:bg-opacity-10 rounded-lg border border-red-200 dark:border-red-800"
@@ -533,7 +463,7 @@ const goToRoute = () => {
                 </h6>
                 <pre
                   class="text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded-md border dark:border-gray-600 overflow-x-auto"
-                ><code>{{ JSON.stringify({ status: 400, message: 'Error' }, null, 2) }}</code></pre>
+                ><code>{{ JSON.stringify({ status: "unauthorized", message: 'Unauthorized' }, null, 2) }}</code></pre>
               </div>
             </div>
 
@@ -544,6 +474,9 @@ const goToRoute = () => {
                   <span class="response-type-badge">{{ responseTypeInfo.name }}</span>
                   <span class="text-sm text-gray-700 dark:text-gray-200 font-semibold">
                     Response Type
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    ({{ responseTypeInfo.module }})
                   </span>
                 </div>
                 <div class="text-sm text-gray-600 dark:text-gray-300 italic">

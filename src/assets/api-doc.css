@@ -554,6 +554,61 @@ main > div {
   flex-direction: column;
 }
 
+/* Nested Structure Styling */
+.nested-property-item {
+  position: relative;
+  margin-left: 0.5rem;
+  padding-left: 1rem;
+}
+
+.nested-property-item::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0.75rem;
+  width: 0.5rem;
+  height: 1px;
+  background-color: #d1d5db;
+}
+
+.nested-property-item::after {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0;
+  width: 1px;
+  height: 0.75rem;
+  background-color: #d1d5db;
+}
+
+.dark .nested-property-item::before,
+.dark .nested-property-item::after {
+  background-color: #6b7280;
+}
+
+/* Visual hierarchy for nested objects */
+.response-field-item .nested-property-item {
+  background: rgba(248, 250, 252, 0.3);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  margin: 0.25rem 0;
+  border: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.dark .response-field-item .nested-property-item {
+  background: rgba(55, 65, 81, 0.3);
+  border-color: rgba(75, 85, 99, 0.5);
+}
+
+/* Enhanced visual connectors for nested structures */
+.response-field-item .nested-property-item:first-child::before {
+  display: none;
+}
+
+.response-field-item .nested-property-item:last-child::after {
+  height: 0.75rem;
+}
+
 /* Mobile responsiveness for test forms */
 @media (max-width: 640px) {
   .test-form-section {
