@@ -18,26 +18,26 @@ const tocItems = ref<TocItem[]>([])
 const activeId = ref<string>('')
 
 const currentGroups = computed(() => {
-  // Если есть выбранный маршрут, показываем только его группу
+  // If there's a selected route, show only its group
   if (apiStore.selectedUrl && apiStore.selectedMethod) {
     return apiStore.selectedGroupRoutes
   }
-  // Иначе показываем все отфильтрованные группы
+  // Otherwise show all filtered groups
   return apiStore.filteredGroups
 })
 
-// Генерируем содержание страницы на основе видимых групп
+// Generate table of contents based on visible groups
 const generateToc = () => {
   const items: TocItem[] = []
 
   currentGroups.value.forEach((group) => {
-    // Определяем реальный индекс группы
+    // Determine the real group index
     const realGroupIndex =
       apiStore.selectedGroupIndex !== null
         ? apiStore.selectedGroupIndex
         : apiStore.filteredGroups.findIndex((g) => g.prefix === group.prefix)
 
-    // Добавляем группу как заголовок первого уровня
+    // Add group as first level header
     items.push({
       id: `group-${realGroupIndex}`,
       label: group.prefix,
@@ -45,7 +45,7 @@ const generateToc = () => {
       groupIndex: realGroupIndex,
     })
 
-    // Добавляем маршруты как заголовки второго уровня
+    // Add routes as second level headers
     group.group.forEach((route, routeIndex) => {
       items.push({
         id: `route-${realGroupIndex}-${routeIndex}`,
@@ -62,9 +62,9 @@ const generateToc = () => {
   tocItems.value = items
 }
 
-// Скролл к элементу
+// Scroll to element
 const scrollToElement = async (id: string) => {
-  // Если это маршрут, используем функцию из store для корректного скролла
+  // If it's a route, use store function for correct scrolling
   if (id.startsWith('route-')) {
     const parts = id.split('-')
     const groupIndex = Number(parts[1])
@@ -75,25 +75,25 @@ const scrollToElement = async (id: string) => {
       groupIndex !== undefined &&
       routeIndex !== undefined
     ) {
-      // Находим соответствующий маршрут и устанавливаем selectedRoute
+      // Find corresponding route and set selectedRoute
       const tocItem = tocItems.value.find((item) => item.id === id)
       if (tocItem && tocItem.url && tocItem.method) {
         apiStore.setSelectedRoute(tocItem.url, tocItem.method)
       }
 
-      // Очищаем activeId, так как теперь используем централизованное состояние
+      // Clear activeId as we now use centralized state
       activeId.value = ''
       await apiStore.scrollToRouteWithCollapse(groupIndex, routeIndex, id)
       return
     }
   }
 
-  // Для групп используем обычный скролл
+  // For groups use regular scroll
   if (id.startsWith('group-')) {
     const parts = id.split('-')
     const groupIndex = Number(parts[1])
     if (!isNaN(groupIndex) && groupIndex !== undefined) {
-      // Очищаем selectedRoute и активный маршрут, устанавливаем activeId для группы
+      // Clear selectedRoute and active route, set activeId for group
       apiStore.clearSelectedRoute()
       apiStore.clearActiveRoute()
       activeId.value = id
@@ -102,14 +102,14 @@ const scrollToElement = async (id: string) => {
 
   const element = document.getElementById(id)
   if (element) {
-    // Используем простой scrollIntoView с настройками
+    // Use simple scrollIntoView with settings
     element.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
       inline: 'nearest',
     })
 
-    // Дополнительно корректируем позицию с учетом offset
+    // Additionally adjust position with offset
     setTimeout(() => {
       const mainContent = document.querySelector('main')
       if (mainContent) {
@@ -142,12 +142,12 @@ watch(
   { immediate: true },
 )
 
-// Отслеживаем изменения selectedRoute для обновления подсветки
+// Track selectedRoute changes for highlighting updates
 watch(
   () => apiStore.selectedUrl,
   () => {
-    // Принудительно обновляем подсветку при изменении selectedRoute
-    // Это особенно важно на странице деталей маршрута
+    // Force highlight update when selectedRoute changes
+    // This is especially important on route detail page
   },
   { immediate: true },
 )
@@ -155,7 +155,6 @@ watch(
 onMounted(() => {
   generateToc()
 })
-
 </script>
 
 <template>
@@ -181,7 +180,7 @@ onMounted(() => {
               'w-full text-left px-3 py-1.5 rounded-md transition-colors text-sm',
               item.level === 1 ? 'font-medium' : 'text-xs font-mono',
               item.level === 2 ? 'ml-4' : '',
-              // Для маршрутов проверяем selectedRoute (URL + метод), для групп - activeId
+              // For routes check selectedRoute (URL + method), for groups - activeId
               (item.url && item.method && apiStore.isRouteSelected(item.url, item.method)) ||
               (item.level === 1 && unref(activeId) === item.id && !unref(apiStore.selectedUrl))
                 ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
@@ -220,5 +219,5 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Дополнительные стили при необходимости */
+/* Additional styles if needed */
 </style>
