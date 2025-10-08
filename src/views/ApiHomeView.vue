@@ -21,7 +21,7 @@ onMounted(async () => {
     <ApiHeader />
     <MobileNavigation />
 
-    <div class="flex h-[calc(100vh-64px)]">
+    <div class="flex min-h-[calc(100vh-64px)]">
       <!-- Left Navigation Panel -->
       <div class="hidden xl:block">
         <SiteNavigation />
@@ -29,7 +29,7 @@ onMounted(async () => {
 
       <!-- Main Content Area -->
       <main class="flex-1 overflow-y-auto">
-        <div class="px-6 py-6">
+        <div class="px-6 py-6 min-h-full">
           <!-- Loading State -->
           <div
             v-if="apiStore.isLoading"

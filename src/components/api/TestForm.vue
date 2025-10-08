@@ -212,7 +212,7 @@ const clearResult = () => {
 </script>
 
 <template>
-  <div class="test-form-section">
+  <div class="test-form-section flex-1">
     <div class="border-t dark:border-gray-600 pt-3 mt-3">
       <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
         <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,7 +549,7 @@ const clearResult = () => {
                 </span>
               </h6>
               <pre
-                class="text-sm bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-3 rounded border dark:border-gray-600 overflow-x-auto max-h-96 overflow-y-auto"
+                class="text-sm bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-3 rounded border dark:border-gray-600 overflow-x-auto max-h-80 overflow-y-auto"
               ><code>{{ responseBodyDisplay }}
                 </code>
               </pre>

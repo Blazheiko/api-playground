@@ -58,7 +58,7 @@
 }
 
 .route-details.expanded {
-  max-height: 2000px;
+  max-height: none; /* Убираем ограничение по высоте */
   padding-top: 1rem;
 }
 
@@ -190,6 +190,7 @@ pre {
     0 0 0 1px rgba(34, 197, 94, 0.05);
   margin: 1.5rem 0;
   padding: 1.5rem;
+  min-height: fit-content; /* Обеспечиваем минимальную высоту для содержимого */
 }
 
 .dark .test-form-section {
@@ -527,6 +528,32 @@ pre {
   border-left-color: rgba(156, 163, 175, 0.5);
 }
 
+/* Height management for better content visibility */
+.route-item {
+  display: flex;
+  flex-direction: column;
+  min-height: fit-content;
+}
+
+.route-details.expanded {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Ensure main content area can expand */
+main {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+main > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Mobile responsiveness for test forms */
 @media (max-width: 640px) {
   .test-form-section {
@@ -575,5 +602,18 @@ pre {
 
   .response-field-item {
     @apply pl-3 py-2 mb-1.5;
+  }
+
+  /* Улучшенное управление высотой на мобильных устройствах */
+  .route-details.expanded {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Обеспечиваем правильную прокрутку на мобильных */
+  main {
+    min-height: calc(100vh - 64px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }

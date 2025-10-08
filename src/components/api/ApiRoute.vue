@@ -104,10 +104,10 @@ const toggleTestForm = async () => {
     // Wait another tick for complete form rendering
     await nextTick()
 
-    // Small delay to complete animations
+    // Small delay to complete animations and ensure proper layout
     setTimeout(() => {
       scrollToTestForm()
-    }, 100)
+    }, 150)
   }
 }
 
@@ -118,14 +118,18 @@ const scrollToTestForm = () => {
 
     if (mainContent) {
       // Get element position relative to main container
-      const elementTop = element.offsetTop
+      const elementRect = element.getBoundingClientRect()
+      const mainRect = mainContent.getBoundingClientRect()
+
+      // Calculate position relative to main container
+      const elementTop = elementRect.top - mainRect.top + mainContent.scrollTop
 
       // Calculate optimal scroll position
       // Show form at the top of visible area with small offset
-      const targetScrollTop = elementTop - 100
+      const targetScrollTop = elementTop - 80
 
       mainContent.scrollTo({
-        top: targetScrollTop,
+        top: Math.max(0, targetScrollTop),
         behavior: 'smooth',
       })
     } else {
@@ -159,6 +163,7 @@ const goToRoute = () => {
     :class="[
       'route-item border rounded-lg transition-shadow duration-200 fade-in scroll-mt-24',
       'bg-white dark:bg-gray-800 dark:border-gray-700',
+      'flex flex-col', // Добавляем flex для лучшего управления высотой
     ]"
     :data-method="isWebSocket ? 'ws' : route.method"
   >
@@ -243,7 +248,7 @@ const goToRoute = () => {
     </div>
 
     <!-- Expanded Details -->
-    <div v-show="isExpanded" class="route-details expanded px-4 pb-4">
+    <div v-show="isExpanded" class="route-details expanded px-4 pb-4 flex-1">
       <div class="flex flex-col lg:grid lg:grid-cols-5 gap-6">
         <div class="space-y-4 lg:col-span-2">
           <div>
@@ -469,7 +474,7 @@ const goToRoute = () => {
                         v-if="fieldInfo.example !== undefined"
                         class="field-example text-gray-500 dark:text-gray-500 text-xs mt-1"
                       >
-                        Example: {{ JSON.stringify(fieldInfo.example) }}
+                        {{ JSON.stringify(fieldInfo.example) }}
                       </div>
 
                       <!-- Nested Properties for Object Type -->
