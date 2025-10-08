@@ -27,6 +27,7 @@ export interface ResponseTypeField {
 }
 
 export interface ResponseType {
+  name?: string
   fields: Record<string, ResponseTypeField>
 }
 

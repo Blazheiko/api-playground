@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
@@ -47,11 +47,18 @@ const methodClass = computed(() =>
 )
 
 const handlerName = computed(() => {
+  // Сначала проверяем handler
   if (typeof props.route.handler === 'string') {
     return props.route.handler
   } else if (props.route.handler && typeof props.route.handler === 'object') {
     return props.route.handler.name || 'unknown'
   }
+
+  // Fallback на validator, если handler не указан
+  if (props.route.validator) {
+    return props.route.validator
+  }
+
   return null
 })
 
@@ -87,6 +94,22 @@ const routeRateLimit = computed(() => {
   // Приоритет: route.rateLimit > route.groupRateLimit
   const rateLimit = props.route.rateLimit || props.route.groupRateLimit
   return formatRateLimit(rateLimit)
+})
+
+// Отладка для проверки типов ответов
+watchEffect(() => {
+  if (isExpanded.value && props.route.url.includes('login')) {
+    console.log('🔍 Route Debug:', {
+      url: props.route.url,
+      handler: props.route.handler,
+      validator: props.route.validator,
+      handlerName: handlerName.value,
+      mappedType: handlerName.value ? apiStore.handlerTypeMapping[handlerName.value] : null,
+      responseTypeInfo: responseTypeInfo.value,
+      availableTypes: Object.keys(apiStore.responseTypes).slice(0, 5),
+      availableMappings: Object.keys(apiStore.handlerTypeMapping).slice(0, 5),
+    })
+  }
 })
 
 const toggleExpanded = () => {
@@ -431,97 +454,93 @@ const goToRoute = () => {
                     Response Type
                   </span>
                 </div>
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                  <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                          <th
-                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                          >
-                            Field
-                          </th>
-                          <th
-                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                          >
-                            Type
-                          </th>
-                          <th
-                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                          >
-                            Required
-                          </th>
-                          <th
-                            class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                          >
-                            Example
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody
-                        class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700"
-                      >
-                        <tr
-                          v-for="(fieldInfo, fieldName) in responseTypeInfo.data.fields"
-                          :key="fieldName"
-                          class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                        >
-                          <td class="px-3 py-2 whitespace-nowrap">
-                            <span
-                              :class="[
-                                'px-2 py-0.5 rounded text-xs font-mono font-semibold',
-                                getTypeClass(fieldInfo.type),
-                              ]"
-                            >
-                              {{ fieldName }}
-                            </span>
-                          </td>
-                          <td class="px-3 py-2 whitespace-nowrap">
-                            <span class="text-xs text-gray-700 dark:text-gray-300 font-mono">{{
-                              fieldInfo.type
-                            }}</span>
-                          </td>
-                          <td class="px-3 py-2 whitespace-nowrap">
-                            <span
-                              :class="[
-                                'text-xs font-medium',
-                                fieldInfo.required
-                                  ? 'text-red-500 dark:text-red-400'
-                                  : 'text-gray-500 dark:text-gray-400',
-                              ]"
-                            >
-                              {{ fieldInfo.required ? 'required' : 'optional' }}
-                            </span>
-                          </td>
-                          <td class="px-3 py-2 text-xs text-gray-600 dark:text-gray-400">
-                            <div v-if="fieldInfo.description" class="max-w-md">
-                              {{ fieldInfo.description }}
-                            </div>
-                            <div
-                              v-if="fieldInfo.example !== undefined"
-                              class="text-gray-500 dark:text-gray-500 italic mt-1"
-                            >
-                              {{ JSON.stringify(fieldInfo.example) }}
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
 
-                <!-- Example Response -->
-                <!-- <div
-                  v-if="responseTypeInfo.data"
-                  class="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700"
-                >
-                  <h6 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                    Example Response
-                  </h6>
-                  <pre
-                    class="text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded-md border dark:border-gray-600 overflow-x-auto"
-                  ><code>{{ JSON.stringify(generateExampleFromType(responseTypeInfo.data), null, 2) }}</code></pre>
-                </div> -->
+                <!-- Fields Display with nested support -->
+                <div class="space-y-2 overflow-x-auto">
+                  <template
+                    v-for="(fieldInfo, fieldName) in responseTypeInfo.data.fields"
+                    :key="fieldName"
+                  >
+                    <!-- Main Field -->
+                    <div
+                      class="response-field-item border-l-2 border-gray-200 dark:border-gray-600 pl-3 py-2"
+                    >
+                      <div class="flex flex-wrap items-center gap-2 text-sm mb-1">
+                        <span
+                          :class="[
+                            'field-name-badge px-2 py-1 rounded text-xs font-mono font-semibold break-all',
+                            getTypeClass(fieldInfo.type),
+                          ]"
+                        >
+                          {{ fieldName }}
+                        </span>
+                        <span
+                          class="field-type-badge px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
+                        >
+                          {{ fieldInfo.type }}
+                        </span>
+                        <span
+                          :class="[
+                            'text-xs whitespace-nowrap font-medium',
+                            fieldInfo.required
+                              ? 'text-red-500 dark:text-red-400'
+                              : 'text-gray-400 dark:text-gray-500',
+                          ]"
+                        >
+                          {{ fieldInfo.required ? 'required' : 'optional' }}
+                        </span>
+                      </div>
+
+                      <!-- Field Description -->
+                      <div
+                        v-if="fieldInfo.description"
+                        class="field-description text-gray-600 dark:text-gray-400 text-xs break-words mt-1"
+                      >
+                        {{ fieldInfo.description }}
+                      </div>
+
+                      <!-- Field Example -->
+                      <div
+                        v-if="fieldInfo.example !== undefined"
+                        class="field-example text-gray-500 dark:text-gray-500 text-xs mt-1"
+                      >
+                        Example: {{ JSON.stringify(fieldInfo.example) }}
+                      </div>
+
+                      <!-- Nested Properties for Object Type -->
+                      <div
+                        v-if="fieldInfo.type === 'object' && fieldInfo.properties"
+                        class="ml-4 mt-2 space-y-1"
+                      >
+                        <div
+                          v-for="(propInfo, propName) in fieldInfo.properties"
+                          :key="`${fieldName}.${propName}`"
+                          class="flex flex-wrap items-center gap-2 text-xs"
+                        >
+                          <span
+                            :class="[
+                              'field-name-badge px-2 py-0.5 rounded font-mono font-semibold',
+                              getTypeClass(propInfo.type),
+                            ]"
+                          >
+                            {{ propName }}
+                          </span>
+                          <span
+                            class="field-type-badge px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
+                          >
+                            {{ propInfo.type }}
+                          </span>
+                          <span
+                            v-if="propInfo.example !== undefined"
+                            class="field-example text-gray-500 dark:text-gray-500 italic"
+                          >
+                            e.g. {{ JSON.stringify(propInfo.example) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
               </div>
 
               <!-- Success/Error Responses -->
