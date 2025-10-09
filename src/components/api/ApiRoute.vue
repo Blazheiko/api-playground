@@ -14,8 +14,6 @@ import TestForm from './TestForm.vue'
 interface Props {
   route: ApiRoute
   groupPrefix: string
-  routeIndex: number
-  groupIndex: number
 }
 
 const props = defineProps<Props>()
@@ -23,8 +21,7 @@ const props = defineProps<Props>()
 const router = useRouter()
 const apiStore = useApiStore()
 
-const isExpanded = computed(() => apiStore.isRouteExpanded(props.groupIndex, props.routeIndex))
-// const isSelected = computed(() => apiStore.isRouteSelected(props.route.url, props.route.method))
+const isExpanded = computed(() => apiStore.isRouteExpanded(props.route.id))
 const showTestForm = ref(false)
 const testFormRef = ref<InstanceType<typeof TestForm> | null>(null)
 
@@ -32,15 +29,18 @@ const isWebSocket = computed(() => apiStore.currentRouteType === 'ws')
 
 const fullUrl = computed(() => {
   if (isWebSocket.value) {
-    return props.route.url
+    return props.route.url || ''
   }
-  const cleanUrl = props.route.url.startsWith('/') ? props.route.url : `/${props.route.url}`
+  const url = props.route.url || ''
+  const cleanUrl = url.startsWith('/') ? url : `/${url}`
   return `/${apiStore.pathPrefix}${cleanUrl}`
 })
 
-const parameters = computed(() => extractParameters(props.route.url))
+const parameters = computed(() => extractParameters(props.route.url || ''))
 
-const methodDisplay = computed(() => (isWebSocket.value ? 'WS' : props.route.method.toUpperCase()))
+const methodDisplay = computed(() =>
+  isWebSocket.value ? 'WS' : (props.route.method || 'UNKNOWN').toUpperCase(),
+)
 const methodClass = computed(() =>
   isWebSocket.value ? 'method-ws' : getMethodClass(props.route.method),
 )
@@ -57,7 +57,7 @@ const responseTypeInfo = computed(() => {
       name: typeData.name,
       module: typeData.module,
       fields: typeData.fields, // TypeScript code as string
-      hasFields: typeData.fields && typeData.fields.length > 0,
+      hasFields: typeData.fields && Object.keys(typeData.fields).length > 0,
     }
   }
 
@@ -78,14 +78,19 @@ const routeRateLimit = computed(() => {
 })
 
 const toggleExpanded = () => {
+  if (props.route.id === undefined || props.route.id === null) {
+    console.error('Route ID is undefined or null:', props.route)
+    return
+  }
+
   // Set selectedRoute when clicking on route
-  apiStore.setSelectedRoute(props.route.url, props.route.method)
-  apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
+  apiStore.setSelectedRoute(props.route.id)
+  apiStore.setActiveRoute(props.route.id)
 
   if (isExpanded.value) {
     apiStore.collapseAllRoutes()
   } else {
-    apiStore.setExpandedRoute(props.groupIndex, props.routeIndex)
+    apiStore.setExpandedRoute(props.route.id)
   }
 }
 
@@ -96,7 +101,7 @@ const toggleTestForm = async () => {
   if (showTestForm.value) {
     // If route is not expanded, expand it first
     if (!wasExpanded) {
-      apiStore.setExpandedRoute(props.groupIndex, props.routeIndex)
+      apiStore.setExpandedRoute(props.route.id)
       // Wait for DOM update after expanding route
       await nextTick()
     }
@@ -139,15 +144,19 @@ const scrollToTestForm = () => {
 }
 
 const goToRoute = () => {
+  if (props.route.id === undefined || props.route.id === null) {
+    console.error('Cannot navigate to route: Route ID is undefined or null:', props.route)
+    return
+  }
+
   // Set selectedRoute before navigating to detail page
-  apiStore.setSelectedRoute(props.route.url, props.route.method)
-  apiStore.setActiveRoute(props.groupIndex, props.routeIndex)
+  apiStore.setSelectedRoute(props.route.id)
+  apiStore.setActiveRoute(props.route.id)
 
   router.push({
     name: 'route-detail',
     params: {
-      groupIndex: props.groupIndex,
-      routeIndex: props.routeIndex,
+      routeId: props.route.id.toString(),
     },
   })
 }
@@ -155,7 +164,7 @@ const goToRoute = () => {
 
 <template>
   <div
-    :id="`route-${groupIndex}-${routeIndex}`"
+    :id="`route-${route.id}`"
     :class="[
       'route-item border rounded-lg transition-shadow duration-200 fade-in scroll-mt-24',
       'bg-white dark:bg-gray-800 dark:border-gray-700',

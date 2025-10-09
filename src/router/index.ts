@@ -10,7 +10,7 @@ const router = createRouter({
       component: ApiHomeView,
     },
     {
-      path: '/route/:groupIndex/:routeIndex',
+      path: '/route/:routeId',
       name: 'route-detail',
       component: () => import('../views/RouteDetailView.vue'),
     },

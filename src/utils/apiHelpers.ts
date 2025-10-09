@@ -1,6 +1,7 @@
 import type { ValidationSchema, ResponseType, RateLimit, RouteParameter } from '@/stores/api-doc'
 
-export function getMethodClass(method: string): string {
+export function getMethodClass(method: string | undefined): string {
+  if (!method) return 'method-unknown'
   return `method-${method.toLowerCase()}`
 }
 
@@ -68,9 +69,18 @@ export function formatRateLimit(rateLimit?: RateLimit) {
 export function generateExampleFromType(typeData: ResponseType) {
   if (!typeData || !typeData.fields) return null
 
-  const example: Record<string, any> = {}
+  // Парсим строку fields как JSON
+  let fields: Record<string, any> = {}
+  try {
+    fields = JSON.parse(typeData.fields)
+  } catch (e) {
+    console.warn('Failed to parse fields JSON:', typeData.fields)
+    return null
+  }
 
-  Object.entries(typeData.fields).forEach(([fieldName, fieldInfo]) => {
+  const example: Record<string, unknown> = {}
+
+  Object.entries(fields).forEach(([fieldName, fieldInfo]) => {
     if (fieldInfo.example !== undefined) {
       example[fieldName] = fieldInfo.example
     } else {
@@ -117,7 +127,7 @@ export function getDefaultRequestBody(
 ): string {
   if (validator && validationSchemas[validator]) {
     const schema = validationSchemas[validator]
-    const defaultBody: Record<string, any> = {}
+    const defaultBody: Record<string, unknown> = {}
 
     Object.entries(schema).forEach(([fieldName, fieldInfo]) => {
       if (fieldInfo.required) {
@@ -157,7 +167,11 @@ export function getDefaultRequestBody(
   return '{\n  "key": "value"\n}'
 }
 
-export function validateJSON(jsonString: string): { isValid: boolean; data?: any; error?: string } {
+export function validateJSON(jsonString: string): {
+  isValid: boolean
+  data?: unknown
+  error?: string
+} {
   if (!jsonString.trim()) {
     return { isValid: true }
   }

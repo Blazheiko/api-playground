@@ -1,43 +1,40 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useApiStore } from '@/stores/api-doc'
+import TreeGroup from './TreeGroup.vue'
 
 const apiStore = useApiStore()
 
-const expandedGroups = ref<Set<number>>(new Set())
+const expandedGroups = ref<Set<string>>(new Set()) // Изменили на строки для поддержки вложенности
 
-const currentGroups = computed(() => apiStore.filteredGroups)
+const currentGroups = computed(() => apiStore.filteredTreeGroups)
 
-const toggleGroup = (index: number) => {
-  if (expandedGroups.value.has(index)) {
-    expandedGroups.value.delete(index)
+const toggleGroup = (groupPath: string) => {
+  if (expandedGroups.value.has(groupPath)) {
+    expandedGroups.value.delete(groupPath)
   } else {
-    expandedGroups.value.add(index)
+    expandedGroups.value.add(groupPath)
   }
 }
 
-const scrollToRoute = async (groupIndex: number, routeIndex: number) => {
-  // Находим URL и метод маршрута и устанавливаем selectedRoute
-  const group = currentGroups.value[groupIndex]
-  const route = group?.group[routeIndex]
+const scrollToRoute = async (id: number) => {
+  // Находим маршрут в плоском списке для получения ID
+  const route = apiStore.findRouteById(id)
   if (route) {
-    apiStore.setSelectedRoute(route.url, route.method)
+    apiStore.setSelectedRoute(route.id)
+    await apiStore.scrollToRouteWithCollapse(route.id)
   }
-
-  // Используем новую функцию из store для корректного скролла
-  await apiStore.scrollToRouteWithCollapse(groupIndex, routeIndex)
 }
 
-const isRouteActive = (groupIndex: number, routeIndex: number) => {
-  const group = currentGroups.value[groupIndex]
-  const route = group?.group[routeIndex]
-  return route ? apiStore.isRouteSelected(route.url, route.method) : false
+const isRouteActive = (id: number) => {
+  const route = apiStore.findRouteById(id)
+  return route ? apiStore.isRouteSelected(route.id) : false
 }
 
-const isGroupActive = (groupIndex: number) => {
-  return (
-    apiStore.activeRoute?.groupIndex === groupIndex && apiStore.activeRoute?.routeIndex === null
-  )
+const isGroupActive = (groupPath: string) => {
+  // Проверяем, есть ли активный маршрут в этой группе
+  const selectedRoute = apiStore.selectedRoute
+  return (selectedRoute && selectedRoute.fullUrl?.startsWith(groupPath)) || false
 }
 
 const getMethodColor = (method: string) => {
@@ -53,17 +50,14 @@ const getMethodColor = (method: string) => {
 
 // Автоматически разворачиваем группу с выбранным маршрутом
 watch(
-  () => apiStore.selectedUrl,
-  (newUrl) => {
-    if (newUrl) {
+  () => apiStore.selectedRoute,
+  (newRoute) => {
+    if (newRoute) {
       // Находим группу, содержащую выбранный маршрут
-      const groupIndex = currentGroups.value.findIndex((group) =>
-        group.group.some(
-          (route) => route.url === newUrl && route.method === apiStore.selectedMethod,
-        ),
-      )
-      if (groupIndex !== -1) {
-        expandedGroups.value.add(groupIndex)
+      const groupPath = newRoute.fullUrl?.split('/').slice(0, -1).join('/') || ''
+      if (groupPath) {
+        // Разворачиваем группу по префиксу
+        expandedGroups.value.add(groupPath)
       }
     }
   },
@@ -117,59 +111,18 @@ watch(
       </div>
 
       <div v-else class="space-y-1">
-        <div v-for="(group, groupIndex) in currentGroups" :key="groupIndex">
-          <!-- Group Header -->
-          <button
-            @click="toggleGroup(groupIndex)"
-            :class="[
-              'w-full flex items-center px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors',
-              isGroupActive(groupIndex) ? 'bg-gray-50 dark:bg-gray-700' : '',
-            ]"
-          >
-            <svg
-              :class="[
-                'w-4 h-4 mr-2 text-gray-400 transition-transform',
-                expandedGroups.has(groupIndex) ? 'rotate-90' : '',
-              ]"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <span class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-              {{ group.prefix }}
-            </span>
-            <span class="ml-auto text-xs text-gray-500 dark:text-gray-400">
-              {{ group.group.length }}
-            </span>
-          </button>
-
-          <!-- Group Routes -->
-          <div v-if="expandedGroups.has(groupIndex)" class="ml-6 space-y-0.5">
-            <button
-              v-for="(route, routeIndex) in group.group"
-              :key="routeIndex"
-              @click="scrollToRoute(groupIndex, routeIndex)"
-              :class="[
-                'w-full flex items-center px-4 py-1.5 text-left rounded-md transition-colors group',
-                isRouteActive(groupIndex, routeIndex)
-                  ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                  : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300',
-              ]"
-            >
-              <span :class="['text-xs font-semibold mr-2 uppercase', getMethodColor(route.method)]">
-                {{ route.method }}
-              </span>
-              <span class="text-xs truncate font-mono">
-                {{ route.url.replace(group.prefix, '') || '/' }}
-              </span>
-            </button>
-          </div>
-        </div>
+        <TreeGroup
+          v-for="group in currentGroups"
+          :key="group.prefix"
+          :group="group"
+          :expanded-groups="expandedGroups"
+          :level="0"
+          @toggle-group="toggleGroup"
+          @scroll-to-route="scrollToRoute"
+          @is-route-active="isRouteActive"
+          @is-group-active="isGroupActive"
+          @get-method-color="getMethodColor"
+        />
       </div>
     </div>
   </nav>

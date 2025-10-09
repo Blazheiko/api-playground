@@ -9,15 +9,26 @@ const route = useRoute()
 const router = useRouter()
 const apiStore = useApiStore()
 
-const groupIndex = computed(() => Number(route.params.groupIndex))
-const routeIndex = computed(() => Number(route.params.routeIndex))
+const routeId = computed(() => {
+  const paramValue = route.params.routeId
 
-const currentGroup = computed(() => {
-  return apiStore.filteredGroups[groupIndex.value]
+  if (typeof paramValue !== 'string') {
+    console.error('routeId param is not a string:', paramValue)
+    return 0
+  }
+
+  const id = Number(paramValue)
+
+  if (isNaN(id)) {
+    console.error('routeId param is not a valid number:', paramValue)
+    return 0
+  }
+
+  return id
 })
 
 const currentRoute = computed(() => {
-  return currentGroup.value?.group[routeIndex.value]
+  return apiStore.findRouteById(routeId.value)
 })
 
 onMounted(async () => {
@@ -25,13 +36,13 @@ onMounted(async () => {
     await apiStore.fetchRoutes()
   }
 
-  // Check if route exists
-  if (!currentRoute.value) {
+  // Check if route exists and routeId is valid
+  if (!currentRoute.value || routeId.value === 0) {
     router.push('/')
   } else {
     // Устанавливаем selectedRoute для корректной подсветки в навигации
-    apiStore.setSelectedRoute(currentRoute.value.url, currentRoute.value.method)
-    apiStore.setActiveRoute(groupIndex.value, routeIndex.value)
+    apiStore.setSelectedRoute(routeId.value)
+    apiStore.setActiveRoute(routeId.value)
   }
 })
 
@@ -62,19 +73,17 @@ const goBack = () => {
       </button>
 
       <!-- Route Details -->
-      <div v-if="currentRoute && currentGroup">
+      <div v-if="currentRoute">
         <div class="mb-4">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {{ currentRoute.description || 'Route Details' }}
           </h2>
-          <p class="text-gray-600 dark:text-gray-400">Group: {{ currentGroup.description }}</p>
+          <p class="text-gray-600 dark:text-gray-400">Route ID: {{ currentRoute.id }}</p>
         </div>
 
         <ApiRoute
           :route="currentRoute"
-          :group-prefix="currentGroup.prefix"
-          :route-index="routeIndex"
-          :group-index="groupIndex"
+          :group-prefix="currentRoute.fullUrl?.split('/').slice(0, -1).join('/') || ''"
         />
       </div>
 

@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ApiGroup } from '@/stores/api-doc'
+import type { ApiGroup, ApiRoute } from '@/stores/api-doc'
 import { formatRateLimit } from '@/utils/apiHelpers'
-import ApiRoute from './ApiRoute.vue'
+import ApiRouteComponent from './ApiRoute.vue'
 import { useApiStore } from '@/stores/api-doc'
 
 interface Props {
   group: ApiGroup
-  groupIndex: number
 }
 
 const props = defineProps<Props>()
@@ -19,7 +18,7 @@ const apiStore = useApiStore()
 
 <template>
   <div
-    :id="`group-${groupIndex}`"
+    :id="`group-${group.prefix}`"
     class="group-item bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 overflow-hidden fade-in scroll-mt-24"
   >
     <div
@@ -28,7 +27,7 @@ const apiStore = useApiStore()
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex-1 min-w-0">
           <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white break-words">
-            {{ group.description || `Group ${groupIndex + 1}` }}
+            {{ group.description || `Group ${group.prefix}` }}
           </h3>
           <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2">
             <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -86,14 +85,12 @@ const apiStore = useApiStore()
 
     <div class="p-6">
       <div class="space-y-4">
-        <ApiRoute
-          v-for="(route, routeIndex) in group.group"
-          :key="`${groupIndex}-${routeIndex}`"
-          :id="`route-${groupIndex}-${routeIndex}`"
-          :route="route"
+        <ApiRouteComponent
+          v-for="route in group.group"
+          :key="(route as ApiRoute).id"
+          :id="`route-${(route as ApiRoute).id}`"
+          :route="route as ApiRoute"
           :group-prefix="group.prefix"
-          :route-index="routeIndex"
-          :group-index="groupIndex"
         />
       </div>
     </div>

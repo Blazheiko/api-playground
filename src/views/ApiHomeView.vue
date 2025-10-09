@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useApiStore } from '@/stores/api-doc'
 import ApiHeader from '@/components/api/ApiHeader.vue'
 import ApiGroup from '@/components/api/ApiGroup.vue'
@@ -77,7 +77,6 @@ onMounted(async () => {
               v-for="(group, index) in apiStore.filteredGroups"
               :key="index"
               :group="group"
-              :group-index="index"
             />
           </div>
 

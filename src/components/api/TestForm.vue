@@ -92,7 +92,8 @@ const sendRequest = async () => {
       try {
         const fetchOptions: RequestInit = {
           method: props.route.method.toUpperCase(),
-          headers: requestHeaders,
+          headers:
+            Object.keys(requestHeaders).length > 0 ? (requestHeaders as HeadersInit) : undefined,
         }
 
         if (requestBody !== null && isBodyMethod.value) {

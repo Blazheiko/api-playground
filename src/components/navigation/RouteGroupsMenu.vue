@@ -27,17 +27,13 @@ const toggleRoute = (routeKey: string) => {
   }
 }
 
-const navigateToRoute = (groupIndex: number, routeIndex: number) => {
-  // Находим URL и метод маршрута и устанавливаем selectedRoute
-  const group = currentGroups.value[groupIndex]
-  const route = group?.group[routeIndex]
+const navigateToRoute = (routeId: number) => {
+  const route = apiStore.findRouteById(routeId)
   if (route) {
-    apiStore.setSelectedRoute(route.url, route.method)
+    apiStore.setSelectedRoute(routeId)
+    apiStore.setActiveRoute(routeId)
+    router.push(`/route/${routeId}`)
   }
-
-  // Устанавливаем активный маршрут перед навигацией
-  apiStore.setActiveRoute(groupIndex, routeIndex)
-  router.push(`/route/${groupIndex}/${routeIndex}`)
 }
 
 const getMethodColor = (method: string) => {
@@ -56,8 +52,8 @@ const getMethodColor = (method: string) => {
   )
 }
 
-const getRouteKey = (groupIndex: number, routeIndex: number) => {
-  return `${groupIndex}-${routeIndex}`
+const getRouteKey = (routeId: number) => {
+  return `route-${routeId}`
 }
 
 const expandAllGroups = () => {
@@ -71,10 +67,8 @@ const collapseAllGroups = () => {
   expandedRoutes.value.clear()
 }
 
-const isRouteActive = (groupIndex: number, routeIndex: number) => {
-  const group = currentGroups.value[groupIndex]
-  const route = group?.group[routeIndex]
-  return route ? apiStore.isRouteSelected(route.url, route.method) : false
+const isRouteActive = (routeId: number) => {
+  return apiStore.isRouteSelected(routeId)
 }
 </script>
 
@@ -188,16 +182,16 @@ const isRouteActive = (groupIndex: number, routeIndex: number) => {
           class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
         >
           <div
-            v-for="(route, routeIndex) in group.group"
+            v-for="(route, routeIndex) in group.group.filter((item) => 'url' in item)"
             :key="routeIndex"
             class="border-b border-gray-100 dark:border-gray-700 last:border-b-0"
           >
             <!-- Route Header -->
             <button
-              @click="toggleRoute(getRouteKey(groupIndex, routeIndex))"
+              @click="toggleRoute(getRouteKey((route as ApiRoute).id))"
               :class="[
                 'w-full p-3 transition-colors text-left',
-                isRouteActive(groupIndex, routeIndex)
+                isRouteActive((route as ApiRoute).id)
                   ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700',
               ]"
@@ -205,18 +199,21 @@ const isRouteActive = (groupIndex: number, routeIndex: number) => {
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 flex-1 min-w-0">
                   <span
-                    :class="['px-2 py-1 text-xs font-medium rounded', getMethodColor(route.method)]"
+                    :class="[
+                      'px-2 py-1 text-xs font-medium rounded',
+                      getMethodColor((route as ApiRoute).method),
+                    ]"
                   >
-                    {{ route.method }}
+                    {{ (route as ApiRoute).method }}
                   </span>
                   <span class="text-sm text-gray-900 dark:text-gray-100 truncate font-mono">
-                    {{ route.url }}
+                    {{ (route as ApiRoute).url }}
                   </span>
                 </div>
                 <svg
                   :class="[
                     'w-4 h-4 text-gray-400 transition-transform',
-                    expandedRoutes.has(getRouteKey(groupIndex, routeIndex)) ? 'rotate-180' : '',
+                    expandedRoutes.has(getRouteKey((route as ApiRoute).id)) ? 'rotate-180' : '',
                   ]"
                   fill="none"
                   stroke="currentColor"
@@ -240,39 +237,47 @@ const isRouteActive = (groupIndex: number, routeIndex: number) => {
 
             <!-- Route Details -->
             <div
-              v-if="expandedRoutes.has(getRouteKey(groupIndex, routeIndex))"
+              v-if="expandedRoutes.has(getRouteKey((route as ApiRoute).id))"
               class="px-3 pb-3 bg-gray-50 dark:bg-gray-700"
             >
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
                   <span class="text-xs text-gray-600 dark:text-gray-400">Handler:</span>
                   <span class="text-xs font-mono text-gray-900 dark:text-gray-100">
-                    {{ typeof route.handler === 'string' ? route.handler : route.handler?.name }}
+                    {{
+                      (() => {
+                        const handler = (route as ApiRoute).handler
+                        if (typeof handler === 'string') return handler
+                        if (handler && typeof handler === 'object' && 'name' in handler)
+                          return handler.name
+                        return 'Unknown'
+                      })()
+                    }}
                   </span>
                 </div>
 
-                <div v-if="route.validator" class="flex items-center justify-between">
+                <div v-if="(route as ApiRoute).validator" class="flex items-center justify-between">
                   <span class="text-xs text-gray-600 dark:text-gray-400">Validator:</span>
                   <span
                     class="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-2 py-1 rounded"
                   >
-                    {{ route.validator }}
+                    {{ (route as ApiRoute).validator }}
                   </span>
                 </div>
 
-                <div v-if="route.rateLimit" class="flex items-center justify-between">
+                <div v-if="(route as ApiRoute).rateLimit" class="flex items-center justify-between">
                   <span class="text-xs text-gray-600 dark:text-gray-400">Rate Limit:</span>
                   <span
                     class="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 px-2 py-1 rounded"
                   >
-                    {{ route.rateLimit.maxRequests }}/{{
-                      Math.round(route.rateLimit.windowMs / 60000)
+                    {{ (route as ApiRoute).rateLimit!.maxRequests }}/{{
+                      Math.round((route as ApiRoute).rateLimit!.windowMs / 60000)
                     }}m
                   </span>
                 </div>
 
                 <button
-                  @click="navigateToRoute(groupIndex, routeIndex)"
+                  @click="navigateToRoute((route as ApiRoute).id)"
                   class="w-full mt-3 px-3 py-2 bg-primary-600 text-white text-xs font-medium rounded hover:bg-primary-700 transition-colors"
                 >
                   Открыть детали

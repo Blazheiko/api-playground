@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, unref } from 'vue'
 import { useApiStore } from '@/stores/api-doc'
+import type { ApiRoute } from '@/stores/api-doc'
 
 const apiStore = useApiStore()
 
@@ -9,52 +10,74 @@ interface TocItem {
   label: string
   level: number
   method?: string
-  groupIndex?: number
-  routeIndex?: number
+  routeId?: number
   url?: string
 }
 
 const tocItems = ref<TocItem[]>([])
 const activeId = ref<string>('')
 
-const currentGroups = computed(() => {
-  // If there's a selected route, show only its group
-  if (apiStore.selectedUrl && apiStore.selectedMethod) {
-    return apiStore.selectedGroupRoutes
+// Используем готовую плоскую структуру из store
+const currentRoutes = computed(() => {
+  // Если есть выбранный маршрут (isSelected = true), показываем только его группу
+  const selectedRoute = apiStore.filteredFlatRoutes.find((route) => route.isSelected)
+  if (selectedRoute) {
+    const groupKey = selectedRoute.fullUrl?.split('/').slice(0, -1).join('/') || 'root'
+
+    // Фильтруем маршруты той же группы
+    return apiStore.filteredFlatRoutes.filter((route) => {
+      const routeGroupKey = route.fullUrl?.split('/').slice(0, -1).join('/') || 'root'
+      return routeGroupKey === groupKey
+    })
   }
-  // Otherwise show all filtered groups
-  return apiStore.filteredGroups
+
+  // Иначе показываем все отфильтрованные маршруты
+  return apiStore.filteredFlatRoutes
 })
 
-// Generate table of contents based on visible groups
+// Computed для группировки маршрутов
+const groupedRoutes = computed(() => {
+  const groups: { [key: string]: ApiRoute[] } = {}
+
+  currentRoutes.value.forEach((route) => {
+    const groupKey = route.fullUrl?.split('/').slice(0, -1).join('/') || 'root'
+    if (!groups[groupKey]) {
+      groups[groupKey] = []
+    }
+    groups[groupKey].push(route)
+  })
+
+  return groups
+})
+
+// Генерируем TOC на основе текущих маршрутов
 const generateToc = () => {
   const items: TocItem[] = []
 
-  currentGroups.value.forEach((group) => {
-    // Determine the real group index
-    const realGroupIndex =
-      apiStore.selectedGroupIndex !== null
-        ? apiStore.selectedGroupIndex
-        : apiStore.filteredGroups.findIndex((g) => g.prefix === group.prefix)
-
-    // Add group as first level header
+  // Создаем TOC элементы
+  Object.entries(groupedRoutes.value).forEach(([groupPath, routes]) => {
+    // Добавляем группу как заголовок первого уровня
     items.push({
-      id: `group-${realGroupIndex}`,
-      label: group.prefix,
+      id: `group-${groupPath}`,
+      label: groupPath === 'root' ? 'Root' : groupPath,
       level: 1,
-      groupIndex: realGroupIndex,
     })
 
-    // Add routes as second level headers
-    group.group.forEach((route, routeIndex) => {
+    // Добавляем маршруты как элементы второго уровня
+    routes.forEach((route) => {
+      if (route.id === undefined || route.id === null) {
+        console.error('Route has invalid id:', route)
+        return
+      }
+
+      const displayUrl = route.url.replace(groupPath, '') || '/'
       items.push({
-        id: `route-${realGroupIndex}-${routeIndex}`,
-        label: route.url.replace(group.prefix, '') || '/',
+        id: `route-${route.id}`,
+        label: displayUrl,
         method: route.method,
         level: 2,
-        groupIndex: realGroupIndex,
-        routeIndex,
-        url: route.url,
+        routeId: route.id,
+        url: route.fullUrl || route.url,
       })
     })
   })
@@ -62,54 +85,50 @@ const generateToc = () => {
   tocItems.value = items
 }
 
-// Scroll to element
-const scrollToElement = async (id: string) => {
-  // If it's a route, use store function for correct scrolling
+// Скролл к элементу
+const selectRoute = async (id: string) => {
+  // Если это маршрут, находим его по ID и устанавливаем isSelected
+  console.log('selectRoute', id)
   if (id.startsWith('route-')) {
-    const parts = id.split('-')
-    const groupIndex = Number(parts[1])
-    const routeIndex = Number(parts[2])
-    if (
-      !isNaN(groupIndex) &&
-      !isNaN(routeIndex) &&
-      groupIndex !== undefined &&
-      routeIndex !== undefined
-    ) {
-      // Find corresponding route and set selectedRoute
-      const tocItem = tocItems.value.find((item) => item.id === id)
-      if (tocItem && tocItem.url && tocItem.method) {
-        apiStore.setSelectedRoute(tocItem.url, tocItem.method)
-      }
+    const routeId = Number(id.replace('route-', ''))
 
-      // Clear activeId as we now use centralized state
-      activeId.value = ''
-      await apiStore.scrollToRouteWithCollapse(groupIndex, routeIndex, id)
+    if (isNaN(routeId)) {
+      console.error('Invalid routeId extracted from id:', id)
       return
+    }
+
+    const route = apiStore.findRouteById(routeId)
+
+    if (route) {
+      // Используем метод store для установки выбранного маршрута
+      apiStore.setSelectedRoute(routeId)
+
+      activeId.value = ''
+      await apiStore.scrollToRouteWithCollapse(routeId, id)
+      return
+    } else {
+      console.error('Route not found for routeId:', routeId)
     }
   }
 
-  // For groups use regular scroll
+  // Для групп используем обычный скролл
   if (id.startsWith('group-')) {
-    const parts = id.split('-')
-    const groupIndex = Number(parts[1])
-    if (!isNaN(groupIndex) && groupIndex !== undefined) {
-      // Clear selectedRoute and active route, set activeId for group
-      apiStore.clearSelectedRoute()
-      apiStore.clearActiveRoute()
-      activeId.value = id
-    }
+    // Сбрасываем isSelected только для маршрутов в текущем контексте
+    apiStore.clearSelectedRoutes(currentRoutes.value)
+
+    activeId.value = id
   }
 
   const element = document.getElementById(id)
   if (element) {
-    // Use simple scrollIntoView with settings
+    // Используем простой scrollIntoView с настройками
     element.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
       inline: 'nearest',
     })
 
-    // Additionally adjust position with offset
+    // Дополнительно корректируем позицию с учетом offset
     setTimeout(() => {
       const mainContent = document.querySelector('main')
       if (mainContent) {
@@ -135,21 +154,20 @@ const getMethodColor = (method: string) => {
 }
 
 watch(
-  currentGroups,
+  [currentRoutes, groupedRoutes],
   () => {
     generateToc()
   },
   { immediate: true },
 )
 
-// Track selectedRoute changes for highlighting updates
+// Отслеживаем изменения isSelected для обновления подсветки
 watch(
-  () => apiStore.selectedUrl,
+  () => currentRoutes.value.map((route) => route.isSelected),
   () => {
-    // Force highlight update when selectedRoute changes
-    // This is especially important on route detail page
+    // Принудительно обновляем подсветку при изменении isSelected
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 )
 
 onMounted(() => {
@@ -175,14 +193,17 @@ onMounted(() => {
       <ul v-else class="space-y-1">
         <li v-for="item in tocItems" :key="item.id">
           <button
-            @click="scrollToElement(item.id)"
+            @click="selectRoute(item.id)"
             :class="[
               'w-full text-left px-3 py-1.5 rounded-md transition-colors text-sm',
               item.level === 1 ? 'font-medium' : 'text-xs font-mono',
               item.level === 2 ? 'ml-4' : '',
-              // For routes check selectedRoute (URL + method), for groups - activeId
-              (item.url && item.method && apiStore.isRouteSelected(item.url, item.method)) ||
-              (item.level === 1 && unref(activeId) === item.id && !unref(apiStore.selectedUrl))
+              // For routes check isSelected field, for groups - activeId
+              (item.routeId &&
+                currentRoutes.find((route) => route.id === item.routeId)?.isSelected) ||
+              (item.level === 1 &&
+                unref(activeId) === item.id &&
+                !currentRoutes.some((route) => route.isSelected))
                 ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
             ]"
@@ -204,13 +225,13 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <span>Total groups:</span>
           <span class="font-medium text-gray-900 dark:text-gray-100">
-            {{ currentGroups.length }}
+            {{ Object.keys(groupedRoutes).length }}
           </span>
         </div>
         <div class="flex items-center justify-between">
           <span>Total routes:</span>
           <span class="font-medium text-gray-900 dark:text-gray-100">
-            {{ currentGroups.reduce((sum, group) => sum + group.group.length, 0) }}
+            {{ currentRoutes.length }}
           </span>
         </div>
       </div>
