@@ -70,10 +70,11 @@ export function generateExampleFromType(typeData: ResponseType) {
   if (!typeData || !typeData.fields) return null
 
   // Парсим строку fields как JSON
-  let fields: Record<string, any> = {}
+  let fields: Record<string, unknown> = {}
   try {
     fields = JSON.parse(typeData.fields)
   } catch (e) {
+    console.warn('Failed to parse fields JSON:', e)
     console.warn('Failed to parse fields JSON:', typeData.fields)
     return null
   }
@@ -81,10 +82,16 @@ export function generateExampleFromType(typeData: ResponseType) {
   const example: Record<string, unknown> = {}
 
   Object.entries(fields).forEach(([fieldName, fieldInfo]) => {
-    if (fieldInfo.example !== undefined) {
-      example[fieldName] = fieldInfo.example
-    } else {
-      switch (fieldInfo.type) {
+    if (
+      typeof fieldInfo === 'object' &&
+      fieldInfo !== null &&
+      'example' in fieldInfo &&
+      fieldInfo.example !== undefined
+    ) {
+      example[fieldName] = (fieldInfo as { example: unknown }).example
+    } else if (typeof fieldInfo === 'object' && fieldInfo !== null && 'type' in fieldInfo) {
+      const typedFieldInfo = fieldInfo as { type: string; example?: unknown }
+      switch (typedFieldInfo.type) {
         case 'string':
           example[fieldName] = fieldName.includes('email')
             ? 'user@example.com'

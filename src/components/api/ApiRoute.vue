@@ -287,7 +287,7 @@ const goToRoute = () => {
 
           <!-- Validation Schema -->
           <div v-if="validationSchema">
-            <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Validation Schema</h5>
+            <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Request Body</h5>
             <div class="space-y-2 overflow-x-auto">
               <div
                 v-for="(fieldInfo, fieldName) in validationSchema"
@@ -361,7 +361,7 @@ const goToRoute = () => {
 
         <div class="space-y-4 lg:col-span-3">
           <!-- Request Body -->
-          <div v-if="route.requestBody">
+          <!-- <div v-if="route.requestBody">
             <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Request Body</h5>
             <p
               v-if="route.requestBody.description"
@@ -414,7 +414,7 @@ const goToRoute = () => {
                 class="text-xs bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 rounded border dark:border-gray-600 overflow-x-auto"
               ><code>{{ JSON.stringify(route.requestBody.example, null, 2) }}</code></pre>
             </div>
-          </div>
+          </div> -->
 
           <!-- Response Format -->
           <div>
