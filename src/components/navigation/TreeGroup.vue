@@ -33,6 +33,15 @@ const toggleGroup = () => {
   emit('toggle-group', groupPath.value)
 }
 
+const getUrl = (urlInitial: string) => {
+  let url = urlInitial
+  url = url.replace(props.group.prefix, '') || '/'
+  if (url.startsWith('//')) {
+    url = url.slice(1)
+  }
+  return url
+}
+
 const scrollToRoute = (route: ApiRoute) => {
   // Находим маршрут с правильным ID по fullUrl и method
   const routeWithId = apiStore.findRouteById(route.id)
@@ -139,7 +148,7 @@ const totalRoutesCount = computed(() => {
             {{ (item as ApiRoute).method }}
           </span>
           <span class="text-xs truncate font-mono">
-            {{ (item as ApiRoute).url.replace(group.prefix, '') || '/' }}
+            {{ getUrl((item as ApiRoute).url) }}
           </span>
         </button>
       </template>

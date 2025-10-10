@@ -96,6 +96,16 @@ const totalRoutesCount = computed(() => {
   countRoutes(props.group)
   return count
 })
+
+const getUrl = (urlInitial: string) => {
+  let url = urlInitial
+  url = url.replace(props.group.prefix, '') || '/'
+  if (url.startsWith('//')) {
+    url = url.slice(1)
+  }
+  return url
+}
+
 </script>
 
 <template>
@@ -134,7 +144,7 @@ const totalRoutesCount = computed(() => {
     <!-- Group Content -->
     <div v-if="isExpanded" class="space-y-0.5">
       <!-- Routes in current group -->
-      <template v-for="route in getGroupRoutes(group)" :key="`${route.url}-${route.method}`">
+      <template v-for="route in getGroupRoutes(group)" :key="route.id">
         <button
           @click="scrollToRoute(route)"
           :class="[
@@ -154,7 +164,7 @@ const totalRoutesCount = computed(() => {
             {{ route.method }}
           </span>
           <span class="text-xs truncate font-mono">
-            {{ route.url.replace(group.prefix, '') || '/' }}
+            {{ getUrl(route.url) }}
           </span>
         </button>
       </template>

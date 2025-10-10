@@ -56,13 +56,14 @@ const validateBody = () => {
 }
 
 const buildUrl = () => {
-  let url = props.route.url
+  let url = props.route.fullUrl
+  if (!url) throw new Error('fullUrl is not defined')
   Object.entries(paramValues.value).forEach(([key, value]) => {
     if (value) {
-      url = url.replace(`:${key}`, value)
+      url = url?.replace(`:${key}`, value)
     }
   })
-  return `/${apiStore.pathPrefix}/${url}`
+  return url
 }
 
 const sendRequest = async () => {

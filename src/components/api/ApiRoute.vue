@@ -367,61 +367,7 @@ const goToRoute = () => {
         </div>
 
         <div class="space-y-4 lg:col-span-3">
-          <!-- Request Body -->
-          <!-- <div v-if="route.requestBody">
-            <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Request Body</h5>
-            <p
-              v-if="route.requestBody.description"
-              class="text-sm text-gray-600 dark:text-gray-400 mb-2"
-            >
-              {{ route.requestBody.description }}
-            </p>
-            <div v-if="route.requestBody.schema" class="space-y-2 overflow-x-auto">
-              <div
-                v-for="(fieldInfo, fieldName) in route.requestBody.schema"
-                :key="fieldName"
-                class="border-l-2 border-gray-200 dark:border-gray-600 pl-3 py-2"
-              >
-                <div class="flex flex-wrap items-center gap-2 text-sm mb-1">
-                  <span
-                    :class="[
-                      'px-2 py-1 rounded text-xs font-mono font-semibold break-all',
-                      getTypeClass(fieldInfo.type),
-                    ]"
-                  >
-                    {{ fieldName }}
-                  </span>
-                  <span
-                    class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs"
-                  >
-                    {{ fieldInfo.type }}
-                  </span>
-                  <span
-                    :class="[
-                      'text-xs whitespace-nowrap',
-                      fieldInfo.required
-                        ? 'text-red-500 dark:text-red-400'
-                        : 'text-gray-400 dark:text-gray-500',
-                    ]"
-                  >
-                    {{ fieldInfo.required ? 'required' : 'optional' }}
-                  </span>
-                </div>
-                <div
-                  v-if="fieldInfo.description"
-                  class="text-gray-600 dark:text-gray-400 text-xs break-words mt-1"
-                >
-                  {{ fieldInfo.description }}
-                </div>
-              </div>
-            </div>
-            <div v-if="route.requestBody.example" class="mt-2">
-              <h6 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Example</h6>
-              <pre
-                class="text-xs bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 p-2 rounded border dark:border-gray-600 overflow-x-auto"
-              ><code>{{ JSON.stringify(route.requestBody.example, null, 2) }}</code></pre>
-            </div>
-          </div> -->
+
 
           <!-- Response Format -->
           <div>
@@ -454,18 +400,6 @@ const goToRoute = () => {
                   ><code>{{ responseTypeInfo.fields }}</code></pre>
                 </div>
               </div>
-
-              <!-- Success/Error Responses -->
-              <!-- <div
-                class="p-3 bg-green-50 dark:bg-green-900 dark:bg-opacity-10 rounded-lg border border-green-200 dark:border-green-800"
-              >
-                <h6 class="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">
-                  Example Success Response Format
-                </h6>
-                <pre
-                  class="text-xs bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 p-3 rounded-md border dark:border-gray-600 overflow-x-auto"
-                ><code>{{ JSON.stringify({ status: 200, data: 'Success' }, null, 2) }}</code></pre>
-              </div> -->
 
               <div
                 class="p-3 bg-red-50 dark:bg-red-900 dark:bg-opacity-10 rounded-lg border border-red-200 dark:border-red-800"
