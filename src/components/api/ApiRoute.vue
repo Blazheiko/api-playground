@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
 import {
@@ -18,7 +18,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const router = useRouter()
+// const router = useRouter()
 const apiStore = useApiStore()
 
 const isExpanded = computed(() => apiStore.isRouteExpanded(props.route.id))
@@ -150,23 +150,23 @@ const scrollToTestForm = () => {
   }
 }
 
-const goToRoute = () => {
-  if (props.route.id === undefined || props.route.id === null) {
-    console.error('Cannot navigate to route: Route ID is undefined or null:', props.route)
-    return
-  }
+// const goToRoute = () => {
+//   if (props.route.id === undefined || props.route.id === null) {
+//     console.error('Cannot navigate to route: Route ID is undefined or null:', props.route)
+//     return
+//   }
 
-  // Set selectedRoute before navigating to detail page
-  apiStore.setSelectedRoute(props.route.id)
-  apiStore.setActiveRoute(props.route.id)
+//   // Set selectedRoute before navigating to detail page
+//   apiStore.setSelectedRoute(props.route.id)
+//   apiStore.setActiveRoute(props.route.id)
 
-  router.push({
-    name: 'route-detail',
-    params: {
-      routeId: props.route.id.toString(),
-    },
-  })
-}
+//   router.push({
+//     name: 'route-detail',
+//     params: {
+//       routeId: props.route.id.toString(),
+//     },
+//   })
+// }
 </script>
 
 <template>
@@ -198,9 +198,9 @@ const goToRoute = () => {
             >
               {{ methodDisplay }}
             </span>
+            <!-- @click.stop="goToRoute" -->
             <code
               class="text-sm font-mono text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded break-all cursor-pointer hover:underline"
-              @click.stop="goToRoute"
             >
               {{ route.fullUrl }}
             </code>
