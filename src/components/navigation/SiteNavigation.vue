@@ -67,7 +67,7 @@ watch(
 
 <template>
   <nav
-    class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto"
+    class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full flex flex-col"
   >
     <!-- Header -->
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -105,7 +105,7 @@ watch(
     </div>
 
     <!-- Navigation Tree -->
-    <div class="py-2">
+    <div class="flex-1 overflow-y-auto py-2">
       <div v-if="currentGroups.length === 0" class="px-4 py-8 text-center">
         <p class="text-sm text-gray-500 dark:text-gray-400">Нет доступных маршрутов</p>
       </div>

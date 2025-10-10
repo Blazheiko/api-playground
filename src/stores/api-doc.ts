@@ -101,12 +101,7 @@ export const useApiStore = defineStore('api', () => {
   const groupsWs = ref<ApiGroup[]>([])
 
   function createGroupRoute(groups: ApiGroup[], group: ApiGroup, parentPrefix: string = '') {
-
-    const groupRoutes = groupRouteHandler(
-      groups,
-      group.group,
-      parentPrefix,
-    )
+    const groupRoutes = groupRouteHandler(groups, group.group, parentPrefix)
     const groupItem = {
       ...group,
       group: groupRoutes,
@@ -418,24 +413,29 @@ export const useApiStore = defineStore('api', () => {
   function scrollToElement(elementId: string, offset: number = 100) {
     const element = document.getElementById(elementId)
     if (element) {
-      // Сначала пробуем простой scrollIntoView с настройками
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
-      })
+      // Находим контейнер main с overflow-y-auto
+      const mainContent = document.querySelector('main')
+      if (mainContent) {
+        // Получаем позицию элемента относительно контейнера main
+        const elementRect = element.getBoundingClientRect()
+        const containerRect = mainContent.getBoundingClientRect()
 
-      // Дополнительно корректируем позицию с учетом offset
-      setTimeout(() => {
-        const mainContent = document.querySelector('main')
-        if (mainContent) {
-          const currentScrollTop = mainContent.scrollTop
-          mainContent.scrollTo({
-            top: Math.max(0, currentScrollTop - offset),
-            behavior: 'smooth',
-          })
-        }
-      }, 100)
+        // Вычисляем нужную позицию скролла
+        const targetScrollTop = mainContent.scrollTop + elementRect.top - containerRect.top - offset
+
+        // Выполняем скролл
+        mainContent.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth',
+        })
+      } else {
+        // Fallback: используем стандартный scrollIntoView
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+          inline: 'nearest',
+        })
+      }
     }
   }
 

@@ -55,4 +55,42 @@ import { RouterView } from 'vue-router'
 .border-primary-500 {
   border-color: var(--color-primary-500);
 }
+
+/* Custom thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+  border: none;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Dark mode scrollbars */
+.dark *::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+
+.dark * {
+  scrollbar-color: #4b5563 transparent;
+}
 </style>

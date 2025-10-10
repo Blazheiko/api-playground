@@ -121,24 +121,8 @@ const selectRoute = async (id: string) => {
 
   const element = document.getElementById(id)
   if (element) {
-    // Используем простой scrollIntoView с настройками
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest',
-    })
-
-    // Дополнительно корректируем позицию с учетом offset
-    setTimeout(() => {
-      const mainContent = document.querySelector('main')
-      if (mainContent) {
-        const currentScrollTop = mainContent.scrollTop
-        mainContent.scrollTo({
-          top: Math.max(0, currentScrollTop - 100),
-          behavior: 'smooth',
-        })
-      }
-    }, 100)
+    // Используем метод из store для консистентности
+    apiStore.scrollToElement(id, 100)
   }
 }
 
@@ -177,7 +161,7 @@ onMounted(() => {
 
 <template>
   <aside
-    class="w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 h-full overflow-y-auto"
+    class="w-64 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 h-full flex flex-col"
   >
     <!-- Header -->
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -187,7 +171,7 @@ onMounted(() => {
     </div>
 
     <!-- Table of Contents -->
-    <nav class="p-4">
+    <nav class="flex-1 overflow-y-auto p-4">
       <div v-if="tocItems.length === 0" class="text-sm text-gray-500 dark:text-gray-400">Empty</div>
 
       <ul v-else class="space-y-1">
@@ -220,7 +204,7 @@ onMounted(() => {
     </nav>
 
     <!-- Additional Info -->
-    <div class="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+    <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
       <div class="text-xs text-gray-500 dark:text-gray-400 space-y-2">
         <div class="flex items-center justify-between">
           <span>Total groups:</span>

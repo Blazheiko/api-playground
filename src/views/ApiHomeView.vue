@@ -21,14 +21,14 @@ onMounted(async () => {
     <ApiHeader />
     <MobileNavigation />
 
-    <div class="flex min-h-[calc(100vh-64px)]">
+    <div class="flex h-[calc(100vh-64px)]">
       <!-- Left Navigation Panel -->
-      <div class="hidden xl:block">
+      <div class="hidden xl:block h-full">
         <SiteNavigation />
       </div>
 
       <!-- Main Content Area -->
-      <main class="flex-1 overflow-y-auto">
+      <main class="flex-1 overflow-y-auto h-full">
         <div class="px-6 py-6 min-h-full">
           <!-- Loading State -->
           <div
@@ -110,7 +110,7 @@ onMounted(async () => {
       </main>
 
       <!-- Right "On This Page" Panel -->
-      <div class="hidden 2xl:block">
+      <div class="hidden 2xl:block h-full">
         <OnThisPage />
       </div>
     </div>
