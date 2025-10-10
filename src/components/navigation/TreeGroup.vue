@@ -40,7 +40,6 @@ const getUrl = (urlInitial: string) => {
 }
 
 const scrollToRoute = (route: ApiRoute) => {
-  // Используем прямо route.id, так как он уникальный
   if (route.id) {
     emit('scroll-to-route', route.id)
   } else {
@@ -49,7 +48,6 @@ const scrollToRoute = (route: ApiRoute) => {
 }
 
 const isRouteActive = (route: ApiRoute) => {
-  // Используем прямо route.id, так как он уникальный
   const isSelected = route.id ? apiStore.isRouteSelected(route.id) : false
 
   if (isSelected) {
@@ -65,18 +63,17 @@ const isRouteActive = (route: ApiRoute) => {
 }
 
 const isGroupActive = () => {
-  // Проверяем, есть ли активный маршрут в этой группе
   const selectedRouteId = apiStore.selectedRouteId
   if (!selectedRouteId) return false
 
-  // Проверяем, есть ли выбранный маршрут в текущей группе (рекурсивно)
+  // Check if the selected route exists in the current group (recursively)
   function hasRouteInGroup(group: ApiGroup, routeId: number): boolean {
     for (const item of group.group) {
       if ('group' in item) {
-        // Это вложенная группа, проверяем рекурсивно
+        // This is a nested group, check recursively
         if (hasRouteInGroup(item, routeId)) return true
       } else {
-        // Это маршрут, проверяем ID
+        // This is a route, check ID
         if (item.id === routeId) return true
       }
     }
@@ -107,15 +104,14 @@ const getMethodColor = (method: string) => {
   return colors[method as keyof typeof colors] || 'text-gray-600 dark:text-gray-400'
 }
 
-// Подсчитываем общее количество маршрутов в группе и всех вложенных группах
 const totalRoutesCount = computed(() => {
   let count = 0
 
   function countRoutes(group: ApiGroup) {
-    // Считаем маршруты в текущей группе
+    // Count routes in the current group
     count += group.group.filter((item) => !('group' in item)).length
 
-    // Рекурсивно считаем маршруты во вложенных группах
+    // Recursively count routes in nested groups
     group.group.forEach((item) => {
       if ('group' in item) {
         countRoutes(item)

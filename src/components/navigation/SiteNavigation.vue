@@ -5,7 +5,7 @@ import TreeGroup from './TreeGroup.vue'
 
 const apiStore = useApiStore()
 
-const expandedGroups = ref<Set<string>>(new Set()) // Изменили на строки для поддержки вложенности
+const expandedGroups = ref<Set<string>>(new Set()) // Changed to strings to support nesting
 
 const currentGroups = computed(() => apiStore.filteredTreeGroups)
 
@@ -18,7 +18,7 @@ const toggleGroup = (groupPath: string) => {
 }
 
 const scrollToRoute = async (id: number) => {
-  // Находим маршрут в плоском списке для получения ID
+  // Find route in flat list to get ID
   const route = apiStore.findRouteById(id)
   if (route) {
     apiStore.setSelectedRoute(route.id)
@@ -26,19 +26,19 @@ const scrollToRoute = async (id: number) => {
   }
 }
 
-// Автоматически разворачиваем группу с выбранным маршрутом
+// Automatically expand group with selected route
 watch(
   () => apiStore.selectedRouteId,
   (selectedRouteId) => {
     if (selectedRouteId) {
-      // Находим все группы, которые содержат выбранный маршрут
+      // Find all groups that contain the selected route
       function findGroupsWithRoute(groups: ApiGroup[], routeId: number, parentPath = ''): string[] {
         const foundPaths: string[] = []
 
         for (const group of groups) {
           const currentPath = parentPath ? `${parentPath}/${group.prefix}` : group.prefix
 
-          // Проверяем, есть ли маршрут в этой группе (рекурсивно)
+          // Check if route exists in this group (recursively)
           function hasRouteInGroup(groupItems: (ApiRoute | ApiGroup)[]): boolean {
             for (const item of groupItems) {
               if ('group' in item) {
@@ -52,7 +52,7 @@ watch(
 
           if (hasRouteInGroup(group.group)) {
             foundPaths.push(currentPath)
-            // Также ищем во вложенных группах
+            // Also search in nested groups
             const nestedPaths = findGroupsWithRoute(
               group.group.filter((item): item is ApiGroup => 'group' in item),
               routeId,
@@ -143,6 +143,4 @@ watch(
   </nav>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

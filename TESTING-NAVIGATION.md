@@ -1,59 +1,59 @@
-# Тестирование навигации на основе ID
+# Testing ID-based Navigation
 
-## Что было исправлено
+## What was fixed
 
-1. **Переделана логика подсветки** - теперь используется уникальный `route.id` вместо сопоставления по URL
-2. **Исправлена установка ID** - теперь все маршруты в древовидной структуре имеют уникальные ID
-3. **Улучшено автоматическое разворачивание групп** - поиск групп теперь основан на ID маршрутов
-4. **Добавлены отладочные логи** - для диагностики работы подсветки
+1. **Redesigned highlighting logic** - now uses unique `route.id` instead of URL matching
+2. **Fixed ID assignment** - now all routes in tree structure have unique IDs
+3. **Improved automatic group expansion** - group search is now based on route IDs
+4. **Added debug logs** - for highlighting diagnostics
 
-## Как протестировать
+## How to test
 
-1. Откройте приложение в браузере: http://localhost:5173
-2. Откройте консоль разработчика (F12)
-3. Кликните на любой маршрут в правой панели "On This Page"
-4. Проверьте в консоли сообщения:
-   - `Auto-expanding groups (ID-based)` - показывает найденные группы для разворачивания
-   - `Groups expanded, new expandedGroups` - показывает развернутые группы
-   - `Route is active (ID-based)` - показывает активный маршрут
-   - `Group is active (ID-based)` - показывает активную группу
+1. Open the application in browser: http://localhost:5173
+2. Open developer console (F12)
+3. Click on any route in the right "On This Page" panel
+4. Check console messages:
+   - `Auto-expanding groups (ID-based)` - shows found groups for expansion
+   - `Groups expanded, new expandedGroups` - shows expanded groups
+   - `Route is active (ID-based)` - shows active route
+   - `Group is active (ID-based)` - shows active group
 
-## Ожидаемое поведение
+## Expected behavior
 
-✅ При клике на маршрут в правой панели:
+✅ When clicking on a route in the right panel:
 
-- Соответствующий маршрут в левой навигации подсвечивается синим цветом
-- Группа, содержащая маршрут, автоматически разворачивается
-- В консоли появляются отладочные сообщения с правильными ID
+- Corresponding route in left navigation is highlighted in blue
+- Group containing the route automatically expands
+- Debug messages with correct IDs appear in console
 
-✅ При переходе к конкретному маршруту через URL (например, `/route/123`):
+✅ When navigating to specific route via URL (e.g., `/route/123`):
 
-- Маршрут с ID 123 подсвечивается в левой навигации
-- Его группа автоматически разворачивается
+- Route with ID 123 is highlighted in left navigation
+- Its group automatically expands
 
-## Ключевые изменения в коде
+## Key code changes
 
 ### TreeGroup.vue
 
-- `isRouteActive()` теперь использует `route.id` напрямую
-- `isGroupActive()` рекурсивно ищет маршрут по ID в группе
-- `scrollToRoute()` передает `route.id` напрямую
+- `isRouteActive()` now uses `route.id` directly
+- `isGroupActive()` recursively searches for route by ID in group
+- `scrollToRoute()` passes `route.id` directly
 
 ### SiteNavigation.vue
 
-- Автоматическое разворачивание групп основано на поиске по ID
-- Добавлена рекурсивная функция поиска групп, содержащих маршрут
+- Automatic group expansion based on ID search
+- Added recursive function to find groups containing route
 
 ### api-doc.ts (store)
 
-- Добавлена функция `assignIdsToTreeRoutes()` для установки ID в древовидной структуре
-- Обновлен `groupRouteHandler()` для сохранения существующих ID
+- Added `assignIdsToTreeRoutes()` function to set IDs in tree structure
+- Updated `groupRouteHandler()` to preserve existing IDs
 
-## Отладка
+## Debugging
 
-Если подсветка не работает, проверьте в консоли:
+If highlighting doesn't work, check in console:
 
-1. Есть ли сообщения об ошибках?
-2. Правильно ли устанавливается `selectedRouteId`?
-3. Находятся ли группы с маршрутом?
-4. Правильно ли сравниваются ID маршрутов?
+1. Are there any error messages?
+2. Is `selectedRouteId` set correctly?
+3. Are groups with the route found?
+4. Are route IDs compared correctly?

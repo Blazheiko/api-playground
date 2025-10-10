@@ -49,7 +49,7 @@ export interface ApiRoute {
   responseSchema?: {
     schema: string //Record<string, ResponseTypeField>
   }
-  fullUrl?: string // Полный URL с учетом всех префиксов
+  fullUrl?: string // Full URL including all prefixes
   isSelected: boolean
 }
 
@@ -58,8 +58,8 @@ export interface ApiGroup {
   description: string
   middlewares?: string[]
   rateLimit?: RateLimit
-  group: (ApiRoute | ApiGroup)[] // Поддержка вложенных групп
-  fullPrefix?: string // Полный префикс с учетом родительских групп
+  group: (ApiRoute | ApiGroup)[] // Support for nested groups
+  fullPrefix?: string // Full prefix including parent groups
 }
 
 export const useApiStore = defineStore('api', () => {
@@ -75,11 +75,11 @@ export const useApiStore = defineStore('api', () => {
   const error = ref<string | null>(null)
   const currentRouteType = ref<'http' | 'ws'>('http')
   const searchTerm = ref('')
-  const expandedRoute = ref<number | null>(null) // ID маршрута
-  const activeRoute = ref<number | null>(null) // ID маршрута
-  const selectedRouteId = ref<number | null>(null) // ID выбранного маршрута
+  const expandedRoute = ref<number | null>(null) // Route ID
+  const activeRoute = ref<number | null>(null) // Route ID
+  const selectedRouteId = ref<number | null>(null) // Selected route ID
 
-  // Вспомогательные функции для обработки вложенных групп
+  // Helper functions for handling nested groups
   function normalizePrefix(parentPrefix: string): string {
     if (!parentPrefix) return ''
     let normalizedPrefix = parentPrefix
@@ -123,7 +123,7 @@ export const useApiStore = defineStore('api', () => {
         createGroupRoute(groups, item, `${normalizedParentPrefix}/${normalizePrefix(item.prefix)}`)
       } else {
         const route = item as ApiRoute
-        // Используем существующий ID или создаем новый
+        // Use existing ID or create new one
         const id = route.id || getNextId()
         route.id = id
 
@@ -151,7 +151,7 @@ export const useApiStore = defineStore('api', () => {
     return currentRouteType.value === 'http' ? httpRouteGroups.value : wsRouteGroups.value
   })
 
-  // Computed для центральной части - использует линейную структуру групп от groupRouteHandler
+  // Computed for central part - uses linear group structure from groupRouteHandler
   const centralGroups = computed(() => {
     const currentGroups = currentRouteType.value === 'http' ? groupsHttp.value : groupsWs.value
 
@@ -159,12 +159,12 @@ export const useApiStore = defineStore('api', () => {
       return currentGroups
     }
 
-    // Фильтруем группы по поисковому запросу
+    // Filter groups by search query
     const term = searchTerm.value.toLowerCase()
     return currentGroups
       .map((group) => {
         const filteredRoutes = group.group.filter((item) => {
-          // Проверяем, что это маршрут, а не группа
+          // Check that this is a route, not a group
           if ('group' in item) return false
 
           const route = item as ApiRoute
@@ -186,7 +186,7 @@ export const useApiStore = defineStore('api', () => {
       .filter((group) => group.group.length > 0)
   })
 
-  // Computed для древовидной структуры (для SiteNavigation)
+  // Computed for tree structure (for SiteNavigation)
   const filteredTreeGroups = computed(() => {
     if (!searchTerm.value) {
       return currentRouteGroups.value
@@ -198,7 +198,7 @@ export const useApiStore = defineStore('api', () => {
       return groups
         .map((group) => {
           const filteredRoutes = group.group.filter((item) => {
-            if ('group' in item) return true // Группы всегда показываем
+            if ('group' in item) return true // Always show groups
 
             const route = item as ApiRoute
             const handlerName =
@@ -219,7 +219,7 @@ export const useApiStore = defineStore('api', () => {
     return filterTreeGroups(currentRouteGroups.value)
   })
 
-  // Computed для плоского списка маршрутов (для OnThisPage)
+  // Computed for flat list of routes (for OnThisPage)
   const filteredFlatRoutes = computed(() => {
     if (!searchTerm.value) {
       return currentRouteType.value === 'http' ? flatHttpRoute.value : flatWsRoute.value
@@ -242,7 +242,7 @@ export const useApiStore = defineStore('api', () => {
     })
   })
 
-  // Computed для получения выбранного маршрута
+  // Computed for getting selected route
   const selectedRoute = computed(() => {
     if (selectedRouteId.value === null) {
       return null
@@ -271,15 +271,15 @@ export const useApiStore = defineStore('api', () => {
       responseTypes.value = data.responseTypes || {}
       pathPrefix.value = normalizePrefix(data.pathPrefix || '')
 
-      // Устанавливаем ID для всех маршрутов в древовидной структуре
+      // Set IDs for all routes in tree structure
       function assignIdsToTreeRoutes(groups: ApiGroup[]) {
         for (const group of groups) {
           for (const item of group.group) {
             if ('group' in item) {
-              // Рекурсивно обрабатываем вложенные группы
+              // Recursively process nested groups
               assignIdsToTreeRoutes([item])
             } else {
-              // Устанавливаем ID для маршрута
+              // Set ID for route
               if (!item.id) {
                 item.id = getNextId()
               }
@@ -291,7 +291,7 @@ export const useApiStore = defineStore('api', () => {
       assignIdsToTreeRoutes(httpRouteGroups.value)
       assignIdsToTreeRoutes(wsRouteGroups.value)
 
-      // Обрабатываем группы для создания плоской структуры
+      // Process groups to create flat structure
       groupsHttp.value = []
       groupsWs.value = []
       groupRouteHandler(groupsHttp.value, httpRouteGroups.value, pathPrefix.value)
@@ -411,22 +411,22 @@ export const useApiStore = defineStore('api', () => {
   }
 
   async function scrollToRouteWithCollapse(routeId: number, elementId?: string) {
-    // Устанавливаем активный маршрут
+    // Set active route
     setActiveRoute(routeId)
 
-    // Сначала сворачиваем все открытые маршруты
+    // First collapse all open routes
     collapseAllRoutes()
 
-    // Ждем следующий тик для обновления DOM
+    // Wait for next tick to update DOM
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Затем разворачиваем нужный маршрут
+    // Then expand the needed route
     setExpandedRoute(routeId)
 
-    // Ждем еще один тик для полного обновления DOM
+    // Wait another tick for complete DOM update
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Теперь выполняем скролл к элементу
+    // Now perform scroll to element
     const targetElementId = elementId || `route-${routeId}`
     scrollToElement(targetElementId)
   }
@@ -434,23 +434,23 @@ export const useApiStore = defineStore('api', () => {
   function scrollToElement(elementId: string, offset: number = 100) {
     const element = document.getElementById(elementId)
     if (element) {
-      // Находим контейнер main с overflow-y-auto
+      // Find main container with overflow-y-auto
       const mainContent = document.querySelector('main')
       if (mainContent) {
-        // Получаем позицию элемента относительно контейнера main
+        // Get element position relative to main container
         const elementRect = element.getBoundingClientRect()
         const containerRect = mainContent.getBoundingClientRect()
 
-        // Вычисляем нужную позицию скролла
+        // Calculate needed scroll position
         const targetScrollTop = mainContent.scrollTop + elementRect.top - containerRect.top - offset
 
-        // Выполняем скролл
+        // Perform scroll
         mainContent.scrollTo({
           top: Math.max(0, targetScrollTop),
           behavior: 'smooth',
         })
       } else {
-        // Fallback: используем стандартный scrollIntoView
+        // Fallback: use standard scrollIntoView
         element.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
