@@ -72,9 +72,9 @@ onMounted(async () => {
           </div>
 
           <!-- API Groups -->
-          <div v-else-if="apiStore.filteredGroups.length > 0" class="space-y-6">
+          <div v-else-if="apiStore.centralGroups.length > 0" class="space-y-6">
             <ApiGroup
-              v-for="(group, index) in apiStore.filteredGroups"
+              v-for="(group, index) in apiStore.centralGroups"
               :key="index"
               :group="group"
             />

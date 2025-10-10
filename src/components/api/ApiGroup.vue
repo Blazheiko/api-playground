@@ -13,6 +13,8 @@ const props = defineProps<Props>()
 
 const groupRateLimit = computed(() => formatRateLimit(props.group.rateLimit))
 
+const routes = computed(() => props.group.group.filter((item) => !('group' in item)) as ApiRoute[])
+
 const apiStore = useApiStore()
 </script>
 
@@ -74,7 +76,7 @@ const apiStore = useApiStore()
           <div
             class="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400 drop-shadow-sm"
           >
-            {{ group.group.length }}
+            {{ routes.length }}
           </div>
           <div class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 drop-shadow-sm">
             endpoints
@@ -86,10 +88,10 @@ const apiStore = useApiStore()
     <div class="p-6">
       <div class="space-y-4">
         <ApiRouteComponent
-          v-for="route in group.group"
-          :key="(route as ApiRoute).id"
-          :id="`route-${(route as ApiRoute).id}`"
-          :route="route as ApiRoute"
+          v-for="route in routes"
+          :key="route.id"
+          :id="`route-${route.id}`"
+          :route="route"
           :group-prefix="group.prefix"
         />
       </div>

@@ -62,6 +62,16 @@ export interface ApiGroup {
   fullPrefix?: string // Полный префикс с учетом родительских групп
 }
 
+// Интерфейс для отфильтрованных групп (только маршруты, без вложенных групп)
+export interface FilteredApiGroup {
+  prefix: string
+  description: string
+  middlewares?: string[]
+  rateLimit?: RateLimit
+  group: ApiRoute[] // Только маршруты, без групп
+  fullPrefix?: string
+}
+
 // Интерфейс для плоской группы (только маршруты, без вложенных групп)
 export interface FlatApiGroup {
   prefix: string
@@ -89,6 +99,7 @@ export const useApiStore = defineStore('api', () => {
 
   // Вспомогательные функции для обработки вложенных групп
   function normalizePrefix(parentPrefix: string): string {
+    if (!parentPrefix) return ''
     let normalizedPrefix = parentPrefix
     if (parentPrefix.endsWith('/')) {
       normalizedPrefix = parentPrefix.slice(0, -1)
@@ -104,40 +115,59 @@ export const useApiStore = defineStore('api', () => {
   function getNextId(): number {
     return ++currentId
   }
+  const groupsHttp = ref<ApiGroup[]>([])
+  const groupsWs = ref<ApiGroup[]>([])
 
-  function groupRouteHandler(groups: ApiGroup[], parentPrefix: string = ''): ApiRoute[] {
+  function createGroupRoute(groups: ApiGroup[], group: ApiGroup, parentPrefix: string = '') {
+    // console.log('createGroupRoute', group)
+    const normalizedParentPrefix = parentPrefix ? normalizePrefix(parentPrefix) : ''
+    const groupRoutes = groupRouteHandler(
+      groups,
+      group.group,
+      `${normalizedParentPrefix}/${normalizePrefix(group.prefix)}`,
+    )
+    const groupItem = {
+      ...group,
+      group: groupRoutes,
+    }
+    groups.push(groupItem)
+  }
+
+  function groupRouteHandler(
+    groups: ApiGroup[],
+    groupRoutes: (ApiRoute | ApiGroup)[],
+    parentPrefix: string = '',
+  ): ApiRoute[] {
     const routes: ApiRoute[] = []
-    const normalizedParentPrefix = normalizePrefix(parentPrefix)
+    const normalizedParentPrefix = parentPrefix ? normalizePrefix(parentPrefix) : ''
+    if (!Array.isArray(groupRoutes)) throw new Error('groupRoutes is not an array')
 
-    for (const group of groups) {
-      for (const item of group.group) {
-        if ('group' in item) {
-          // Рекурсивно обрабатываем вложенные группы
-          routes.push(
-            ...groupRouteHandler([item], `${parentPrefix}/${normalizePrefix(group.prefix)}`),
-          )
-        } else {
-          const id = getNextId()
-          item.id = id
-          const route = item as ApiRoute
+    for (const item of groupRoutes) {
+      if ('group' in item && item.group && Array.isArray(item.group)) {
+        createGroupRoute(groups, item, `${normalizedParentPrefix}/${normalizePrefix(item.prefix)}`)
+        // Рекурсивно обрабатываем вложенные группы
+        // routes.push(
+        //   ...groupRouteHandler([item], `${parentPrefix}/${normalizePrefix(group.prefix)}`),
+        // )
+      } else {
+        const route = item as ApiRoute
+        const id = getNextId()
+        route.id = id
 
-          routes.push({
-            ...route,
-            // id,
-            requestBody: route.validator
-              ? {
-                  schema: validationSchemas.value[route.validator] || {},
-                }
-              : undefined,
-            responseSchema: {
-              schema: route.typeResponse
-                ? responseTypes.value[route.typeResponse]?.fields || ''
-                : '',
-            },
-            fullUrl: `${normalizedParentPrefix}/${normalizePrefix(group.prefix)}/${normalizePrefix(route.url)}`,
-            isSelected: false,
-          })
-        }
+        routes.push({
+          ...route,
+          // id,
+          requestBody: route.validator
+            ? {
+                schema: validationSchemas.value[route.validator] || {},
+              }
+            : undefined,
+          responseSchema: {
+            schema: route.typeResponse ? responseTypes.value[route.typeResponse]?.fields || '' : '',
+          },
+          fullUrl: `${normalizedParentPrefix}/${normalizePrefix(route.url)}`.replace(/\/+/g, '/'),
+          isSelected: false,
+        })
       }
     }
 
@@ -149,7 +179,42 @@ export const useApiStore = defineStore('api', () => {
     return currentRouteType.value === 'http' ? httpRouteGroups.value : wsRouteGroups.value
   })
 
-  // Computed для фильтрации групп с учетом поиска
+  // Computed для центральной части - использует линейную структуру групп от groupRouteHandler
+  const centralGroups = computed(() => {
+    const currentGroups = currentRouteType.value === 'http' ? groupsHttp.value : groupsWs.value
+
+    if (!searchTerm.value) {
+      return currentGroups
+    }
+
+    // Фильтруем группы по поисковому запросу
+    const term = searchTerm.value.toLowerCase()
+    return currentGroups
+      .map((group) => {
+        const filteredRoutes = group.group.filter((item) => {
+          // Проверяем, что это маршрут, а не группа
+          if ('group' in item) return false
+
+          const route = item as ApiRoute
+          const handlerName =
+            typeof route.handler === 'string' ? route.handler : route.handler?.name || ''
+          return (
+            route.url.toLowerCase().includes(term) ||
+            (route.description && route.description.toLowerCase().includes(term)) ||
+            handlerName.toLowerCase().includes(term) ||
+            (route.fullUrl && route.fullUrl.toLowerCase().includes(term))
+          )
+        })
+
+        return {
+          ...group,
+          group: filteredRoutes as ApiRoute[],
+        }
+      })
+      .filter((group) => group.group.length > 0)
+  })
+
+  // Computed для фильтрации групп с учетом поиска (для совместимости)
   const filteredGroups = computed(() => {
     // Используем плоские маршруты с правильными ID для создания групп
     const currentFlatRoutes =
@@ -172,30 +237,58 @@ export const useApiStore = defineStore('api', () => {
       })
     }
 
-    // Группируем отфильтрованные маршруты по группам
-    const groupsMap: { [key: string]: ApiGroup } = {}
+    // Группируем отфильтрованные маршруты обратно в структуру групп
+    const groupsMap: { [key: string]: ApiRoute[] } = {}
 
     routesToShow.forEach((route) => {
-      // Определяем группу для маршрута на основе fullUrl
-      const groupKey = route.fullUrl?.split('/').slice(0, -1).join('/') || 'root'
+      // Извлекаем префикс группы из fullUrl
+      const urlParts = route.fullUrl?.split('/').filter((part) => part) || []
+      const groupPrefix = urlParts.length > 1 ? urlParts[urlParts.length - 2] || 'root' : 'root'
 
-      if (!groupsMap[groupKey]) {
-        // Создаем новую группу
-        groupsMap[groupKey] = {
-          prefix: groupKey === 'root' ? '' : groupKey.split('/').pop() || '',
-          fullPrefix: groupKey,
-          description: `Group: ${groupKey}`,
-          group: [],
-          middlewares: route.middlewares,
-          rateLimit: route.groupRateLimit,
-        }
+      if (!groupsMap[groupPrefix]) {
+        groupsMap[groupPrefix] = []
       }
-
-      groupsMap[groupKey].group.push(route)
+      groupsMap[groupPrefix].push(route)
     })
 
-    return Object.values(groupsMap).filter((group) => group.group.length > 0)
+    // Создаем структуру групп из отфильтрованных маршрутов
+    const groups: FilteredApiGroup[] = []
+
+    Object.entries(groupsMap).forEach(([prefix, routes]) => {
+      // Находим оригинальную группу для получения метаданных
+      const originalGroup = findOriginalGroup(prefix, currentRouteGroups.value)
+
+      const group: FilteredApiGroup = {
+        prefix: prefix,
+        description: originalGroup?.description || `Group ${prefix}`,
+        middlewares: originalGroup?.middlewares,
+        rateLimit: originalGroup?.rateLimit,
+        group: routes,
+        fullPrefix: originalGroup?.fullPrefix || prefix,
+      }
+
+      groups.push(group)
+    })
+
+    return groups
   })
+
+  // Вспомогательная функция для поиска оригинальной группы
+  function findOriginalGroup(prefix: string, groups: ApiGroup[]): ApiGroup | null {
+    for (const group of groups) {
+      if (group.prefix === prefix) {
+        return group
+      }
+      // Рекурсивный поиск во вложенных группах
+      for (const item of group.group) {
+        if ('group' in item) {
+          const found = findOriginalGroup(prefix, [item])
+          if (found) return found
+        }
+      }
+    }
+    return null
+  }
 
   // Computed для древовидной структуры (для SiteNavigation)
   const filteredTreeGroups = computed(() => {
@@ -312,8 +405,33 @@ export const useApiStore = defineStore('api', () => {
       pathPrefix.value = data.pathPrefix || ''
 
       // Обрабатываем группы для создания плоской структуры
-      flatHttpRoute.value = groupRouteHandler(httpRouteGroups.value, pathPrefix.value)
-      flatWsRoute.value = groupRouteHandler(wsRouteGroups.value, pathPrefix.value)
+      groupsHttp.value = []
+      groupsWs.value = []
+      groupRouteHandler(groupsHttp.value, httpRouteGroups.value, pathPrefix.value)
+      flatHttpRoute.value = groupsHttp.value.flatMap(
+        (group) => group.group.filter((item) => !('group' in item)) as ApiRoute[],
+      )
+      groupRouteHandler(groupsWs.value, wsRouteGroups.value, pathPrefix.value)
+      flatWsRoute.value = groupsWs.value.flatMap(
+        (group) => group.group.filter((item) => !('group' in item)) as ApiRoute[],
+      )
+
+      console.log('📊 Linear groups structure (for central display):')
+      console.log('  HTTP groups:', groupsHttp.value.length)
+      console.log('  WS groups:', groupsWs.value.length)
+
+      if (groupsHttp.value.length > 0) {
+        const firstGroup = groupsHttp.value[0]
+        console.log('  Sample HTTP group:', {
+          prefix: firstGroup?.prefix,
+          description: firstGroup?.description,
+          routesCount: firstGroup?.group.filter((item) => !('group' in item)).length || 0,
+        })
+      }
+
+      console.log('📊 Flat routes (for navigation):')
+      console.log('  HTTP routes:', flatHttpRoute.value.length)
+      console.log('  WS routes:', flatWsRoute.value.length)
 
       console.log('📘 API Documentation Loaded:', {
         httpRouteGroups: httpRouteGroups.value.length,
@@ -468,6 +586,7 @@ export const useApiStore = defineStore('api', () => {
     selectedRouteId,
     // Computed
     currentRouteGroups,
+    centralGroups,
     filteredGroups,
     filteredTreeGroups,
     filteredFlatRoutes,

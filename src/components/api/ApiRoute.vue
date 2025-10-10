@@ -31,6 +31,13 @@ const fullUrl = computed(() => {
   if (isWebSocket.value) {
     return props.route.url || ''
   }
+
+  // Используем уже вычисленный fullUrl из store, если он есть
+  if (props.route.fullUrl) {
+    return props.route.fullUrl
+  }
+
+  // Fallback к старой логике
   const url = props.route.url || ''
   const cleanUrl = url.startsWith('/') ? url : `/${url}`
   return `/${apiStore.pathPrefix}${cleanUrl}`
