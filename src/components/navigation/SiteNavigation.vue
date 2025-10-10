@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useApiStore } from '@/stores/api-doc'
+import { useApiStore, type ApiGroup, type ApiRoute } from '@/stores/api-doc'
 import TreeGroup from './TreeGroup.vue'
 
 const apiStore = useApiStore()
@@ -26,39 +26,57 @@ const scrollToRoute = async (id: number) => {
   }
 }
 
-const isRouteActive = (id: number) => {
-  const route = apiStore.findRouteById(id)
-  return route ? apiStore.isRouteSelected(route.id) : false
-}
-
-const isGroupActive = (groupPath: string) => {
-  // Проверяем, есть ли активный маршрут в этой группе
-  const selectedRoute = apiStore.selectedRoute
-  return (selectedRoute && selectedRoute.fullUrl?.startsWith(groupPath)) || false
-}
-
-const getMethodColor = (method: string) => {
-  const colors = {
-    GET: 'text-green-600 dark:text-green-400',
-    POST: 'text-blue-600 dark:text-blue-400',
-    PUT: 'text-yellow-600 dark:text-yellow-400',
-    PATCH: 'text-orange-600 dark:text-orange-400',
-    DELETE: 'text-red-600 dark:text-red-400',
-  }
-  return colors[method as keyof typeof colors] || 'text-gray-600 dark:text-gray-400'
-}
-
 // Автоматически разворачиваем группу с выбранным маршрутом
 watch(
-  () => apiStore.selectedRoute,
-  (newRoute) => {
-    if (newRoute) {
-      // Находим группу, содержащую выбранный маршрут
-      const groupPath = newRoute.fullUrl?.split('/').slice(0, -1).join('/') || ''
-      if (groupPath) {
-        // Разворачиваем группу по префиксу
-        expandedGroups.value.add(groupPath)
+  () => apiStore.selectedRouteId,
+  (selectedRouteId) => {
+    if (selectedRouteId) {
+      // Находим все группы, которые содержат выбранный маршрут
+      function findGroupsWithRoute(groups: ApiGroup[], routeId: number, parentPath = ''): string[] {
+        const foundPaths: string[] = []
+
+        for (const group of groups) {
+          const currentPath = parentPath ? `${parentPath}/${group.prefix}` : group.prefix
+
+          // Проверяем, есть ли маршрут в этой группе (рекурсивно)
+          function hasRouteInGroup(groupItems: (ApiRoute | ApiGroup)[]): boolean {
+            for (const item of groupItems) {
+              if ('group' in item) {
+                if (hasRouteInGroup(item.group)) return true
+              } else {
+                if (item.id === routeId) return true
+              }
+            }
+            return false
+          }
+
+          if (hasRouteInGroup(group.group)) {
+            foundPaths.push(currentPath)
+            // Также ищем во вложенных группах
+            const nestedPaths = findGroupsWithRoute(
+              group.group.filter((item): item is ApiGroup => 'group' in item),
+              routeId,
+              currentPath,
+            )
+            foundPaths.push(...nestedPaths)
+          }
+        }
+
+        return foundPaths
       }
+
+      const groupPaths = findGroupsWithRoute(currentGroups.value, selectedRouteId)
+      console.log('Auto-expanding groups (ID-based):', {
+        selectedRouteId,
+        foundGroupPaths: groupPaths,
+        expandedGroups: Array.from(expandedGroups.value),
+      })
+
+      groupPaths.forEach((path) => {
+        expandedGroups.value.add(path)
+      })
+
+      console.log('Groups expanded, new expandedGroups:', Array.from(expandedGroups.value))
     }
   },
   { immediate: true },
@@ -119,9 +137,6 @@ watch(
           :level="0"
           @toggle-group="toggleGroup"
           @scroll-to-route="scrollToRoute"
-          @is-route-active="isRouteActive"
-          @is-group-active="isGroupActive"
-          @get-method-color="getMethodColor"
         />
       </div>
     </div>
@@ -129,5 +144,5 @@ watch(
 </template>
 
 <style scoped>
-/* Дополнительные стили при необходимости */
+
 </style>

@@ -123,7 +123,8 @@ export const useApiStore = defineStore('api', () => {
         createGroupRoute(groups, item, `${normalizedParentPrefix}/${normalizePrefix(item.prefix)}`)
       } else {
         const route = item as ApiRoute
-        const id = getNextId()
+        // Используем существующий ID или создаем новый
+        const id = route.id || getNextId()
         route.id = id
 
         routes.push({
@@ -269,6 +270,26 @@ export const useApiStore = defineStore('api', () => {
       validationSchemas.value = data.validationSchemas || {}
       responseTypes.value = data.responseTypes || {}
       pathPrefix.value = normalizePrefix(data.pathPrefix || '')
+
+      // Устанавливаем ID для всех маршрутов в древовидной структуре
+      function assignIdsToTreeRoutes(groups: ApiGroup[]) {
+        for (const group of groups) {
+          for (const item of group.group) {
+            if ('group' in item) {
+              // Рекурсивно обрабатываем вложенные группы
+              assignIdsToTreeRoutes([item])
+            } else {
+              // Устанавливаем ID для маршрута
+              if (!item.id) {
+                item.id = getNextId()
+              }
+            }
+          }
+        }
+      }
+
+      assignIdsToTreeRoutes(httpRouteGroups.value)
+      assignIdsToTreeRoutes(wsRouteGroups.value)
 
       // Обрабатываем группы для создания плоской структуры
       groupsHttp.value = []

@@ -12,9 +12,6 @@ interface Props {
 interface Emits {
   (e: 'toggle-group', groupPath: string): void
   (e: 'scroll-to-route', id: number): void
-  (e: 'is-route-active', id: number): boolean
-  (e: 'is-group-active', groupPath: string): boolean
-  (e: 'get-method-color', method: string): string
 }
 
 const props = defineProps<Props>()
@@ -43,31 +40,71 @@ const getUrl = (urlInitial: string) => {
 }
 
 const scrollToRoute = (route: ApiRoute) => {
-  // Находим маршрут с правильным ID по fullUrl и method
-  const routeWithId = apiStore.findRouteById(route.id)
-  if (routeWithId && routeWithId.id) {
-    emit('scroll-to-route', routeWithId.id)
+  // Используем прямо route.id, так как он уникальный
+  if (route.id) {
+    emit('scroll-to-route', route.id)
   } else {
-    console.error(
-      'Route not found with fullUrl:',
-      route.fullUrl || route.url,
-      'method:',
-      route.method,
-    )
+    console.error('Route ID is missing:', route)
   }
 }
 
 const isRouteActive = (route: ApiRoute) => {
-  const routeWithId = apiStore.findRouteByFullUrl(route.fullUrl || route.url, route.method)
-  return routeWithId ? emit('is-route-active', routeWithId.id) : false
+  // Используем прямо route.id, так как он уникальный
+  const isSelected = route.id ? apiStore.isRouteSelected(route.id) : false
+
+  if (isSelected) {
+    console.log('Route is active (ID-based):', {
+      routeId: route.id,
+      url: route.url,
+      method: route.method,
+      selectedRouteId: apiStore.selectedRouteId,
+    })
+  }
+
+  return isSelected
 }
 
 const isGroupActive = () => {
-  return emit('is-group-active', groupPath.value)
+  // Проверяем, есть ли активный маршрут в этой группе
+  const selectedRouteId = apiStore.selectedRouteId
+  if (!selectedRouteId) return false
+
+  // Проверяем, есть ли выбранный маршрут в текущей группе (рекурсивно)
+  function hasRouteInGroup(group: ApiGroup, routeId: number): boolean {
+    for (const item of group.group) {
+      if ('group' in item) {
+        // Это вложенная группа, проверяем рекурсивно
+        if (hasRouteInGroup(item, routeId)) return true
+      } else {
+        // Это маршрут, проверяем ID
+        if (item.id === routeId) return true
+      }
+    }
+    return false
+  }
+
+  const isActive = hasRouteInGroup(props.group, selectedRouteId)
+
+  if (isActive) {
+    console.log('Group is active (ID-based):', {
+      groupPrefix: props.group.prefix,
+      selectedRouteId: selectedRouteId,
+      groupPath: groupPath.value,
+    })
+  }
+
+  return isActive
 }
 
 const getMethodColor = (method: string) => {
-  return emit('get-method-color', method)
+  const colors = {
+    GET: 'text-green-600 dark:text-green-400',
+    POST: 'text-blue-600 dark:text-blue-400',
+    PUT: 'text-yellow-600 dark:text-yellow-400',
+    PATCH: 'text-orange-600 dark:text-orange-400',
+    DELETE: 'text-red-600 dark:text-red-400',
+  }
+  return colors[method as keyof typeof colors] || 'text-gray-600 dark:text-gray-400'
 }
 
 // Подсчитываем общее количество маршрутов в группе и всех вложенных группах
@@ -162,9 +199,6 @@ const totalRoutesCount = computed(() => {
           :level="level + 1"
           @toggle-group="$emit('toggle-group', $event)"
           @scroll-to-route="$emit('scroll-to-route', $event)"
-          @is-route-active="$emit('is-route-active', $event)"
-          @is-group-active="$emit('is-group-active', $event)"
-          @get-method-color="$emit('get-method-color', $event)"
         />
       </template>
     </div>
