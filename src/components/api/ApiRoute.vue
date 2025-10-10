@@ -27,21 +27,21 @@ const testFormRef = ref<InstanceType<typeof TestForm> | null>(null)
 
 const isWebSocket = computed(() => apiStore.currentRouteType === 'ws')
 
-const fullUrl = computed(() => {
-  if (isWebSocket.value) {
-    return props.route.url || ''
-  }
+// const fullUrl = computed(() => {
+//   if (isWebSocket.value) {
+//     return props.route.url || ''
+//   }
 
-  // Используем уже вычисленный fullUrl из store, если он есть
-  if (props.route.fullUrl) {
-    return props.route.fullUrl
-  }
+//   // Используем уже вычисленный fullUrl из store, если он есть
+//   if (props.route.fullUrl) {
+//     return props.route.fullUrl
+//   }
 
-  // Fallback к старой логике
-  const url = props.route.url || ''
-  const cleanUrl = url.startsWith('/') ? url : `/${url}`
-  return `/${apiStore.pathPrefix}${cleanUrl}`
-})
+//   // Fallback к старой логике
+//   const url = props.route.url || ''
+//   const cleanUrl = url.startsWith('/') ? url : `/${url}`
+//   return `/${apiStore.pathPrefix}${cleanUrl}`
+// })
 
 const parameters = computed(() => extractParameters(props.route.url || ''))
 
@@ -202,7 +202,7 @@ const goToRoute = () => {
               class="text-sm font-mono text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded break-all cursor-pointer hover:underline"
               @click.stop="goToRoute"
             >
-              {{ fullUrl }}
+              {{ route.fullUrl }}
             </code>
           </div>
           <div class="flex-1 min-w-0">

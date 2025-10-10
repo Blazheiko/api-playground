@@ -9,7 +9,7 @@ const apiStore = useApiStore()
 const expandedGroups = ref<Set<number>>(new Set())
 const expandedRoutes = ref<Set<string>>(new Set())
 
-const currentGroups = computed(() => apiStore.filteredGroups)
+const currentGroups = computed(() => apiStore.centralGroups)
 
 const toggleGroup = (index: number) => {
   if (expandedGroups.value.has(index)) {
