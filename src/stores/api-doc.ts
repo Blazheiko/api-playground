@@ -250,6 +250,23 @@ export const useApiStore = defineStore('api', () => {
     return findRouteById(selectedRouteId.value)
   })
 
+  // Set IDs for all routes in tree structure
+  function assignIdsToTreeRoutes(groups: ApiGroup[]) {
+    for (const group of groups) {
+      for (const item of group.group) {
+        if ('group' in item) {
+          // Recursively process nested groups
+          assignIdsToTreeRoutes([item])
+        } else {
+          // Set ID for route
+          if (!item.id) {
+            item.id = getNextId()
+          }
+        }
+      }
+    }
+  }
+
   // Actions
   async function fetchRoutes() {
     isLoading.value = true
@@ -270,23 +287,6 @@ export const useApiStore = defineStore('api', () => {
       validationSchemas.value = data.validationSchemas || {}
       responseTypes.value = data.responseTypes || {}
       pathPrefix.value = normalizePrefix(data.pathPrefix || '')
-
-      // Set IDs for all routes in tree structure
-      function assignIdsToTreeRoutes(groups: ApiGroup[]) {
-        for (const group of groups) {
-          for (const item of group.group) {
-            if ('group' in item) {
-              // Recursively process nested groups
-              assignIdsToTreeRoutes([item])
-            } else {
-              // Set ID for route
-              if (!item.id) {
-                item.id = getNextId()
-              }
-            }
-          }
-        }
-      }
 
       assignIdsToTreeRoutes(httpRouteGroups.value)
       assignIdsToTreeRoutes(wsRouteGroups.value)
