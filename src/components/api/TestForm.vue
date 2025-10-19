@@ -20,6 +20,7 @@ const isBodyMethod = computed(() =>
 )
 
 const requestCount = ref(1)
+const threadCount = ref(1)
 const headers = ref('{\n  "Content-Type": "application/json"\n}')
 const body = ref(getDefaultRequestBody(props.route.validator || '', apiStore.validationSchemas))
 const paramValues = ref<Record<string, string>>({})
@@ -30,7 +31,21 @@ const isLoading = ref(false)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const testResult = ref<any>(null)
 
-// Готовим данные ответа для отображения
+const progressState = ref({
+  totalRequests: 0,
+  completedRequests: 0,
+  currentThread: 0,
+  totalThreads: 0,
+  isVisible: false,
+})
+
+const progressPercentage = computed(() => {
+  if (progressState.value.totalRequests === 0) return 0
+  return Math.round(
+    (progressState.value.completedRequests / progressState.value.totalRequests) * 100,
+  )
+})
+
 const responseBodyRaw = computed(() => {
   const value = testResult.value
   if (!value) return undefined
@@ -66,8 +81,96 @@ const buildUrl = () => {
   return url
 }
 
+const executeRequest = async (
+  finalUrl: string,
+  requestHeaders: Record<string, string>,
+  requestBody: unknown,
+) => {
+  const startTime = Date.now()
+
+  try {
+    const fetchOptions: RequestInit = {
+      method: props.route.method.toUpperCase(),
+      headers: Object.keys(requestHeaders).length > 0 ? (requestHeaders as HeadersInit) : undefined,
+    }
+
+    if (requestBody !== null && isBodyMethod.value) {
+      fetchOptions.body = JSON.stringify(requestBody)
+    }
+
+    const response = await fetch(finalUrl, fetchOptions)
+    const endTime = Date.now()
+    const responseTime = endTime - startTime
+
+    let responseData
+    const contentType = response.headers.get('content-type')
+
+    if (contentType && contentType.toLowerCase().includes('application/json')) {
+      responseData = await response.json()
+    } else {
+      responseData = await response.text()
+    }
+
+    return {
+      success: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      data: responseData,
+      responseTime,
+    }
+  } catch (requestError) {
+    const endTime = Date.now()
+    const responseTime = endTime - startTime
+
+    return {
+      success: false,
+      status: 0,
+      statusText: 'Network Error',
+      headers: {},
+      data: requestError instanceof Error ? requestError.message : 'Unknown error',
+      responseTime,
+      error: true,
+    }
+  }
+}
+
+const executeThread = async (
+  threadId: number,
+  finalUrl: string,
+  requestHeaders: Record<string, string>,
+  requestBody: unknown,
+) => {
+  const results = []
+  const responseTimes = []
+  const threadStartTime = Date.now()
+
+  progressState.value.currentThread = threadId + 1
+
+  for (let i = 0; i < requestCount.value; i++) {
+    const result = await executeRequest(finalUrl, requestHeaders, requestBody)
+    results.push({
+      ...result,
+      requestNumber: i + 1,
+      threadId: threadId + 1,
+    })
+    responseTimes.push(result.responseTime)
+
+    progressState.value.completedRequests++
+  }
+
+  const threadEndTime = Date.now()
+  const threadTotalTime = threadEndTime - threadStartTime
+
+  return {
+    threadId: threadId + 1,
+    results,
+    responseTimes,
+    threadTotalTime,
+  }
+}
+
 const sendRequest = async () => {
-  // Validate JSON
   const headersValidation = validateHeaders()
   const bodyValidation = isBodyMethod.value ? validateBody() : { isValid: true }
 
@@ -78,119 +181,150 @@ const sendRequest = async () => {
   isLoading.value = true
   testResult.value = null
 
+  const totalRequests = threadCount.value * requestCount.value
+  progressState.value = {
+    totalRequests,
+    completedRequests: 0,
+    currentThread: 0,
+    totalThreads: threadCount.value,
+    isVisible: true,
+  }
+
   const finalUrl = buildUrl()
-  const requestHeaders = headersValidation.data || { 'Content-Type': 'application/json' }
+  const requestHeaders =
+    headersValidation.data || ({ 'Content-Type': 'application/json' } as Record<string, string>)
   const requestBody = bodyValidation.data
 
   try {
     const overallStartTime = Date.now()
-    const results = []
-    const responseTimes = []
 
-    for (let i = 0; i < requestCount.value; i++) {
-      const startTime = Date.now()
+    if (threadCount.value === 1) {
+      const results = []
+      const responseTimes = []
 
-      try {
-        const fetchOptions: RequestInit = {
-          method: props.route.method.toUpperCase(),
-          headers:
-            Object.keys(requestHeaders).length > 0 ? (requestHeaders as HeadersInit) : undefined,
-        }
-
-        if (requestBody !== null && isBodyMethod.value) {
-          fetchOptions.body = JSON.stringify(requestBody)
-        }
-
-        console.log('fetchOptions', fetchOptions)
-
-        const response = await fetch(finalUrl, fetchOptions)
-        const endTime = Date.now()
-        const responseTime = endTime - startTime
-        responseTimes.push(responseTime)
-
-        let responseData
-        const contentType = response.headers.get('content-type')
-        console.log('contentType', contentType)
-
-        if (contentType && contentType.toLowerCase().includes('application/json')) {
-          responseData = await response.json()
-        } else {
-          responseData = await response.text()
-        }
-        console.log('response', response)
-        console.log('responseData', responseData)
-
+      for (let i = 0; i < requestCount.value; i++) {
+        progressState.value.currentThread = 1
+        const result = await executeRequest(
+          finalUrl,
+          requestHeaders as Record<string, string>,
+          requestBody,
+        )
         results.push({
-          success: response.ok,
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          data: responseData,
-          responseTime,
+          ...result,
           requestNumber: i + 1,
         })
-      } catch (requestError) {
-        const endTime = Date.now()
-        const responseTime = endTime - startTime
-        responseTimes.push(responseTime)
+        responseTimes.push(result.responseTime)
 
-        results.push({
-          success: false,
-          status: 0,
-          statusText: 'Network Error',
-          headers: {},
-          data: requestError instanceof Error ? requestError.message : 'Unknown error',
-          responseTime,
-          requestNumber: i + 1,
-          error: true,
-        })
+        progressState.value.completedRequests++
       }
-    }
 
-    const overallEndTime = Date.now()
-    const totalTime = overallEndTime - overallStartTime
+      const overallEndTime = Date.now()
+      const totalTime = overallEndTime - overallStartTime
 
-    const successfulRequests = results.filter((r) => r.success).length
-    const failedRequests = results.length - successfulRequests
-    const avgResponseTime =
-      responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
-    const minResponseTime = Math.min(...responseTimes)
-    const maxResponseTime = Math.max(...responseTimes)
+      const successfulRequests = results.filter((r) => r.success).length
+      const failedRequests = results.length - successfulRequests
+      const avgResponseTime =
+        responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+      const minResponseTime = Math.min(...responseTimes)
+      const maxResponseTime = Math.max(...responseTimes)
 
-    if (requestCount.value === 1) {
-      const singleResult = results[0]
-      if (singleResult) {
+      if (requestCount.value === 1) {
+        const singleResult = results[0]
+        if (singleResult) {
+          testResult.value = {
+            success: singleResult.success,
+            status: singleResult.status,
+            statusText: singleResult.statusText,
+            headers: singleResult.headers,
+            data: singleResult.data,
+            responseTime: singleResult.responseTime,
+            url: finalUrl,
+            method: props.route.method.toUpperCase(),
+            requestHeaders,
+            requestBody,
+          }
+        }
+      } else {
         testResult.value = {
-          success: singleResult.success,
-          status: singleResult.status,
-          statusText: singleResult.statusText,
-          headers: singleResult.headers,
-          data: singleResult.data,
-          responseTime: singleResult.responseTime,
+          success: successfulRequests > 0,
+          firstResult: results[0],
+          statistics: {
+            totalRequests: requestCount.value,
+            successfulRequests,
+            failedRequests,
+            totalTime,
+            avgResponseTime: Math.round(avgResponseTime),
+            minResponseTime,
+            maxResponseTime,
+          },
           url: finalUrl,
           method: props.route.method.toUpperCase(),
           requestHeaders,
           requestBody,
+          allResults: results,
         }
       }
     } else {
+
+      const threadPromises = []
+      for (let i = 0; i < threadCount.value; i++) {
+        threadPromises.push(
+          executeThread(i, finalUrl, requestHeaders as Record<string, string>, requestBody),
+        )
+      }
+
+      const threadResults = await Promise.all(threadPromises)
+      const overallEndTime = Date.now()
+      const totalTime = overallEndTime - overallStartTime
+
+      const allResults: Array<{
+        success: boolean
+        status: number
+        statusText: string
+        headers: Record<string, string>
+        data: unknown
+        responseTime: number
+        requestNumber: number
+        threadId: number
+        error?: boolean
+      }> = []
+      const allResponseTimes: number[] = []
+
+      threadResults.forEach((thread) => {
+        allResults.push(...thread.results)
+        allResponseTimes.push(...thread.responseTimes)
+      })
+
+      const totalRequests = threadCount.value * requestCount.value
+      const successfulRequests = allResults.filter((r) => r.success).length
+      const failedRequests = allResults.length - successfulRequests
+      const avgResponseTime =
+        allResponseTimes.length > 0
+          ? allResponseTimes.reduce((sum, time) => sum + time, 0) / allResponseTimes.length
+          : 0
+      const minResponseTime = allResponseTimes.length > 0 ? Math.min(...allResponseTimes) : 0
+      const maxResponseTime = allResponseTimes.length > 0 ? Math.max(...allResponseTimes) : 0
+
       testResult.value = {
         success: successfulRequests > 0,
-        firstResult: results[0],
+        firstResult: allResults[0],
         statistics: {
-          totalRequests: requestCount.value,
+          totalRequests,
           successfulRequests,
           failedRequests,
           totalTime,
           avgResponseTime: Math.round(avgResponseTime),
           minResponseTime,
           maxResponseTime,
+          threadCount: threadCount.value,
+          requestsPerThread: requestCount.value,
         },
         url: finalUrl,
         method: props.route.method.toUpperCase(),
         requestHeaders,
         requestBody,
-        allResults: results,
+        allResults,
+        threadResults,
       }
     }
   } catch (error) {
@@ -206,7 +340,11 @@ const sendRequest = async () => {
   } finally {
     isLoading.value = false
 
-    // Прокручиваем к блоку Response после получения ответа
+
+    setTimeout(() => {
+      progressState.value.isVisible = false
+    }, 1000)
+
     if (testResult.value) {
       await scrollToResponse()
     }
@@ -214,20 +352,19 @@ const sendRequest = async () => {
 }
 
 const scrollToResponse = async () => {
-  await nextTick() // Ждем обновления DOM
+  await nextTick()
 
-  // Небольшая задержка для полного рендеринга блока Response
+
   setTimeout(() => {
     const responseElement = document.getElementById('response-section')
     if (responseElement) {
-      // Используем простой scrollIntoView с настройками
+
       responseElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
         inline: 'nearest',
       })
 
-      // Дополнительно корректируем позицию с учетом offset
       setTimeout(() => {
         const mainContent = document.querySelector('main')
         if (mainContent) {
@@ -244,6 +381,7 @@ const scrollToResponse = async () => {
 
 const clearResult = () => {
   testResult.value = null
+  progressState.value.isVisible = false
 }
 </script>
 
@@ -316,7 +454,7 @@ const clearResult = () => {
           <div v-if="bodyError" class="json-error-message">JSON Error: {{ bodyError }}</div>
         </div>
 
-        <!-- Request Count and Buttons -->
+        <!-- Request Count, Thread Count and Buttons -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           <div class="flex flex-col flex-1 sm:flex-initial">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -327,6 +465,18 @@ const clearResult = () => {
               v-model.number="requestCount"
               min="1"
               max="1000"
+              class="form-element-height w-full sm:w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm text-center"
+            />
+          </div>
+          <div class="flex flex-col flex-1 sm:flex-initial">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >Threads count</label
+            >
+            <input
+              type="number"
+              v-model.number="threadCount"
+              min="1"
+              max="100"
               class="form-element-height w-full sm:w-20 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm text-center"
             />
           </div>
@@ -343,7 +493,13 @@ const clearResult = () => {
                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
               ></path>
             </svg>
-            {{ isLoading ? 'Sending...' : 'Send Request' }}
+            {{
+              isLoading
+                ? 'Sending...'
+                : threadCount > 1
+                  ? `Send ${threadCount} Threads`
+                  : 'Send Request'
+            }}
           </button>
           <button
             type="button"
@@ -354,6 +510,65 @@ const clearResult = () => {
           </button>
         </div>
       </form>
+
+      <!-- Progress Bar -->
+      <div
+        v-if="progressState.isVisible"
+        class="mt-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-200 dark:border-blue-800"
+      >
+        <div class="flex items-center justify-between mb-2">
+          <h6 class="font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+            <svg class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              ></path>
+            </svg>
+            Выполнение запросов
+          </h6>
+          <span class="text-sm font-medium text-blue-700 dark:text-blue-300">
+            {{ progressPercentage }}%
+          </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-3 mb-3">
+          <div
+            class="bg-blue-600 dark:bg-blue-400 h-3 rounded-full transition-all duration-300 ease-out"
+            :style="{ width: `${progressPercentage}%` }"
+          ></div>
+        </div>
+
+        <!-- Progress Details -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div class="text-center">
+            <div class="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {{ progressState.completedRequests }}
+            </div>
+            <div class="text-gray-600 dark:text-gray-400">Completed</div>
+          </div>
+          <div class="text-center">
+            <div class="text-lg font-bold text-gray-600 dark:text-gray-400">
+              {{ progressState.totalRequests }}
+            </div>
+            <div class="text-gray-600 dark:text-gray-400">Total</div>
+          </div>
+          <div v-if="progressState.totalThreads > 1" class="text-center">
+            <div class="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+              {{ progressState.currentThread }}
+            </div>
+            <div class="text-gray-600 dark:text-gray-400">Current Thread</div>
+          </div>
+          <div v-if="progressState.totalThreads > 1" class="text-center">
+            <div class="text-lg font-bold text-purple-600 dark:text-purple-400">
+              {{ progressState.totalThreads }}
+            </div>
+            <div class="text-gray-600 dark:text-gray-400">Total Threads</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Response Section -->
       <div id="response-section" v-if="testResult" class="test-result-section mt-4">
@@ -449,6 +664,24 @@ const clearResult = () => {
                     {{ testResult.statistics.totalTime }}ms
                   </div>
                   <div class="text-gray-600 dark:text-gray-400">Total Time</div>
+                </div>
+              </div>
+              <!-- Thread Information (if multiple threads) -->
+              <div
+                v-if="testResult.statistics.threadCount && testResult.statistics.threadCount > 1"
+                class="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-blue-200 dark:border-blue-700 text-sm"
+              >
+                <div class="text-center">
+                  <div class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                    {{ testResult.statistics.threadCount }}
+                  </div>
+                  <div class="text-gray-600 dark:text-gray-400">Threads</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-lg font-semibold text-cyan-600 dark:text-cyan-400">
+                    {{ testResult.statistics.requestsPerThread }}
+                  </div>
+                  <div class="text-gray-600 dark:text-gray-400">Requests per Thread</div>
                 </div>
               </div>
               <div
