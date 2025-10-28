@@ -4,6 +4,7 @@ import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
 import { getDefaultRequestBody, validateJSON } from '@/utils/apiHelpers'
 import { extractParameters } from '@/utils/apiHelpers'
+import baseApi from '@/utils/base-api'
 
 interface Props {
   route: ApiRoute
@@ -89,34 +90,43 @@ const executeRequest = async (
   const startTime = Date.now()
 
   try {
-    const fetchOptions: RequestInit = {
-      method: props.route.method.toUpperCase(),
-      headers: Object.keys(requestHeaders).length > 0 ? (requestHeaders as HeadersInit) : undefined,
-    }
+    // Извлекаем путь из полного URL (убираем базовый URL)
+    // const url = new URL(finalUrl)
+    // const route = url.pathname + url.search
 
-    if (requestBody !== null && isBodyMethod.value) {
-      fetchOptions.body = JSON.stringify(requestBody)
-    }
+    const body =
+      requestBody !== null && isBodyMethod.value ? (requestBody as Record<string, unknown>) : {}
 
-    const response = await fetch(finalUrl, fetchOptions)
+    // Используем base-api для выполнения запроса
+    const apiResponse = await baseApi.http(
+      props.route.method.toUpperCase(),
+      finalUrl,
+      body,
+      requestHeaders,
+    )
+
     const endTime = Date.now()
     const responseTime = endTime - startTime
 
-    let responseData
-    const contentType = response.headers.get('content-type')
-
-    if (contentType && contentType.toLowerCase().includes('application/json')) {
-      responseData = await response.json()
-    } else {
-      responseData = await response.text()
+    // Обрабатываем ответ от base-api
+    if (apiResponse.error) {
+      return {
+        success: false,
+        status: apiResponse.status || apiResponse.error.code,
+        statusText: apiResponse.statusText || apiResponse.error.message,
+        headers: apiResponse.headers || {},
+        data: apiResponse.data || apiResponse.error.message,
+        responseTime,
+        error: true,
+      }
     }
 
     return {
-      success: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
-      data: responseData,
+      success: true,
+      status: apiResponse.status || 200,
+      statusText: apiResponse.statusText || 'OK',
+      headers: apiResponse.headers || {},
+      data: apiResponse.data,
       responseTime,
     }
   } catch (requestError) {
@@ -265,7 +275,6 @@ const sendRequest = async () => {
         }
       }
     } else {
-
       const threadPromises = []
       for (let i = 0; i < threadCount.value; i++) {
         threadPromises.push(
@@ -340,7 +349,6 @@ const sendRequest = async () => {
   } finally {
     isLoading.value = false
 
-
     setTimeout(() => {
       progressState.value.isVisible = false
     }, 1000)
@@ -354,11 +362,9 @@ const sendRequest = async () => {
 const scrollToResponse = async () => {
   await nextTick()
 
-
   setTimeout(() => {
     const responseElement = document.getElementById('response-section')
     if (responseElement) {
-
       responseElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
