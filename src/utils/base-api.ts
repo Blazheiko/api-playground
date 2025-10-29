@@ -1,5 +1,6 @@
 import WebsocketBase from '@/utils/websocket-base'
 import { useEventBus } from '@/utils/event-bus'
+import { useApiSettingsStore } from '@/stores/api-settings'
 
 interface HttpResponse {
   [key: string]: unknown
@@ -31,9 +32,28 @@ interface RequestInit {
   headers: Record<string, string>
   body?: string
 }
-const BASE_URL = 'http://127.0.0.1:8088'
 let webSocketClient: WebsocketBase | null = null
 const eventBus = useEventBus()
+
+// Функция для получения настроек API
+const getApiSettings = () => {
+  const apiSettingsStore = useApiSettingsStore()
+  return apiSettingsStore.settings
+}
+
+// Функция для проверки доступности сервера
+const checkServerHealth = async (baseUrl: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${baseUrl}/health`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000), // 5 секунд таймаут
+    })
+    return response.ok
+  } catch {
+    return false
+  }
+}
 
 const api: ApiMethods = {
   http: async <T = HttpResponse>(
@@ -42,13 +62,22 @@ const api: ApiMethods = {
     body: Record<string, unknown> = {},
     customHeaders: Record<string, string> = {},
   ): Promise<ApiResponse<T>> => {
-    // const BASE_URL = baseUrl
+    const settings = getApiSettings()
+
+    // Базовые заголовки
+    const baseHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    // Добавляем глобальные заголовки только если они не пустые
+    const headersToAdd =
+      Object.keys(settings.globalHeaders).length > 0
+        ? { ...baseHeaders, ...settings.globalHeaders, ...customHeaders }
+        : { ...baseHeaders, ...customHeaders }
+
     const init: RequestInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...customHeaders,
-      },
+      headers: headersToAdd,
     }
 
     if (method.toLowerCase() !== 'get' && method.toLowerCase() !== 'delete') {
@@ -56,14 +85,23 @@ const api: ApiMethods = {
     }
 
     try {
+      const settings = getApiSettings()
       let url = route
       if (route.startsWith('http')) {
         url = route
       } else if (route.startsWith('/')) {
-        url = `${BASE_URL}/${route.slice(1)}`
+        url = `${settings.baseUrl}/${route.slice(1)}`
       } else {
-        url = `${BASE_URL}/${route}`
+        url = `${settings.baseUrl}/${route}`
       }
+
+      console.log('Making API request:', {
+        method,
+        url,
+        headers: init.headers,
+        body: init.body,
+      })
+
       const response = await fetch(url, init)
 
       if (!response.ok && response.status === 422) {
@@ -114,12 +152,29 @@ const api: ApiMethods = {
       }
     } catch (error: unknown) {
       console.error('Network error:', error)
+
+      let errorMessage = 'Network error. Please try again later.'
+      let errorCode = 0
+
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        const settings = getApiSettings()
+        errorMessage =
+          `Failed to connect to server at ${settings.baseUrl}. Please check:\n` +
+          '1. Server is running and accessible\n' +
+          '2. Base URL is correct in API settings\n' +
+          '3. CORS is properly configured on server\n' +
+          '4. Network connection is available\n' +
+          '5. Firewall is not blocking the connection'
+        errorCode = -1
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+
       return {
         data: null,
         error: {
-          code: 0,
-          message:
-            error instanceof Error ? error.message : 'Network error. Please try again later.',
+          code: errorCode,
+          message: errorMessage,
         },
       }
     }
@@ -149,3 +204,4 @@ const api: ApiMethods = {
 }
 
 export default api
+export { checkServerHealth }
