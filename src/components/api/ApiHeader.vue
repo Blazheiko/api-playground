@@ -2,12 +2,16 @@
 import { ref } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 import { useApiStore } from '@/stores/api-doc'
-import ApiSettingsModal from './ApiSettingsModal.vue'
+import { useWebSocket } from '@/composables/useWebSocket'
+import ApiSettingsModal from '@/components/api/ApiSettingsModal.vue'
+import WebSocketModal from '@/components/api/WebSocketModal.vue'
 
 const { isDark, toggleTheme } = useTheme()
 const apiStore = useApiStore()
+const { connectionStatus } = useWebSocket()
 
 const isSettingsModalOpen = ref(false)
+const isWebSocketModalOpen = ref(false)
 
 const handleSearch = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -20,6 +24,14 @@ const openSettingsModal = () => {
 
 const closeSettingsModal = () => {
   isSettingsModalOpen.value = false
+}
+
+const openWebSocketModal = () => {
+  isWebSocketModalOpen.value = true
+}
+
+const closeWebSocketModal = () => {
+  isWebSocketModalOpen.value = false
 }
 </script>
 
@@ -95,6 +107,47 @@ const closeSettingsModal = () => {
             </svg>
           </button>
 
+          <!-- WebSocket Button -->
+          <button
+            @click="openWebSocketModal"
+            :class="[
+              'p-2 rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-primary-500 focus:outline-none flex-shrink-0',
+              {
+                'bg-green-100 dark:bg-green-800 hover:bg-green-200 dark:hover:bg-green-700':
+                  connectionStatus === 'connected',
+                'bg-yellow-100 dark:bg-yellow-800 hover:bg-yellow-200 dark:hover:bg-yellow-700':
+                  connectionStatus === 'connecting',
+                'bg-red-100 dark:bg-red-800 hover:bg-red-200 dark:hover:bg-red-700':
+                  connectionStatus === 'error',
+                'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600':
+                  connectionStatus === 'disconnected',
+              },
+            ]"
+            :title="`WebSocket Connection (${connectionStatus})`"
+          >
+            <svg
+              :class="[
+                'h-5 w-5 transition-colors duration-200',
+                {
+                  'text-green-700 dark:text-green-300': connectionStatus === 'connected',
+                  'text-yellow-700 dark:text-yellow-300': connectionStatus === 'connecting',
+                  'text-red-700 dark:text-red-300': connectionStatus === 'error',
+                  'text-gray-700 dark:text-gray-300': connectionStatus === 'disconnected',
+                },
+              ]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"
+              ></path>
+            </svg>
+          </button>
+
           <!-- Theme Toggle Button -->
           <button
             @click="toggleTheme"
@@ -138,5 +191,8 @@ const closeSettingsModal = () => {
 
     <!-- Settings Modal -->
     <ApiSettingsModal :is-open="isSettingsModalOpen" @close="closeSettingsModal" />
+
+    <!-- WebSocket Modal -->
+    <WebSocketModal :is-open="isWebSocketModalOpen" @close="closeWebSocketModal" />
   </header>
 </template>
