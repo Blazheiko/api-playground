@@ -18,6 +18,7 @@ export interface WebsocketMessage {
   event: string
   status: number
   payload: WebsocketPayload
+  timestamp?: number
 }
 
 interface ApiError {
@@ -28,6 +29,7 @@ interface ApiError {
 
 interface SendPayload {
   event: string
+  timestamp?: number
   payload: Record<string, unknown>
 }
 
@@ -298,7 +300,9 @@ class WebsocketBase {
 
   async api(route: string, payload: Record<string, unknown> = {}): Promise<WebsocketMessage> {
     return new Promise((resolve, reject) => {
-      if (this.apiResolve[route]) {
+      const timestamp = Date.now()
+      const key = `${timestamp}_${route}`
+      if (this.apiResolve[key]) {
         reject({ code: 409, message: 'Request already in progress' })
         return
       }
@@ -306,11 +310,13 @@ class WebsocketBase {
       //   route = route.substring(1)
       // }
 
+
       this.send({
         event: route as string,
+        timestamp,
         payload,
       })
-      this.apiResolve[route] = {
+      this.apiResolve[key] = {
         resolve,
         reject,
         timeout: window.setTimeout(() => {
@@ -348,10 +354,11 @@ class WebsocketBase {
     // if (arr.length < 2) return
     // const route = arr[1]
     const route = data.event
-    const cb = this.apiResolve[route as string]
+    const key = `${data.timestamp}_${route}`
+    const cb = this.apiResolve[key]
     if (!cb) return
     window.clearTimeout(cb.timeout)
-    delete this.apiResolve[route as string]
+    delete this.apiResolve[key]
     if (data.status === 200 && cb.resolve) cb.resolve(data)
     else if (cb.reject)
       cb.reject({

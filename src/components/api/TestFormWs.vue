@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import type { ApiRoute } from '@/stores/api-doc'
 import { validateJSON } from '@/utils/api-helpers'
 import baseApi from '@/utils/base-api'
@@ -16,7 +16,7 @@ const props = defineProps<Props>()
 const apiSettingsStore = useApiSettingsStore()
 const {
   connect,
-  disconnect,
+  // disconnect,
   isConnected,
   isConnecting,
   error: wsError,
@@ -45,9 +45,9 @@ onMounted(() => {
 })
 
 // Очистка при размонтировании
-onUnmounted(() => {
-  disconnect()
-})
+// onUnmounted(() => {
+//   disconnect()
+// })
 
 const validateBody = () => {
   const result = validateJSON(body.value)
@@ -91,15 +91,15 @@ const connectWebSocket = async () => {
   }
 }
 
-const disconnectWebSocket = () => {
-  disconnect()
-  // baseApi.setWebSocketClient(null)
-  testResult.value = {
-    success: true,
-    message: 'WebSocket disconnected',
-    status: 'Disconnected',
-  }
-}
+// const disconnectWebSocket = () => {
+//   disconnect()
+//   // baseApi.setWebSocketClient(null)
+//   testResult.value = {
+//     success: true,
+//     message: 'WebSocket disconnected',
+//     status: 'Disconnected',
+//   }
+// }
 
 const sendWebSocketMessage = async () => {
   const bodyValidation = validateBody()
@@ -172,24 +172,33 @@ const scrollToResponse = async () => {
   await nextTick()
 
   setTimeout(() => {
+    // Сначала пытаемся найти блок Response Body, если он есть
+    const responseBodyElement = document.getElementById('ws-response-body')
     const responseElement = document.getElementById('ws-response-section')
-    if (responseElement) {
-      responseElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
-      })
 
-      setTimeout(() => {
-        const mainContent = document.querySelector('main')
-        if (mainContent) {
-          const currentScrollTop = mainContent.scrollTop
-          mainContent.scrollTo({
-            top: Math.max(0, currentScrollTop - 100),
-            behavior: 'smooth',
-          })
-        }
-      }, 100)
+    const targetElement = responseBodyElement || responseElement
+
+    if (targetElement) {
+      // Используем getBoundingClientRect для более точного позиционирования
+      const rect = targetElement.getBoundingClientRect()
+      const mainContent = document.querySelector('main')
+
+      if (mainContent) {
+        // Вычисляем позицию для скролла так, чтобы элемент был в верхней части видимой области
+        const scrollTop = mainContent.scrollTop + rect.top - 120 // 120px отступ сверху
+
+        mainContent.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'smooth',
+        })
+      } else {
+        // Fallback к стандартному scrollIntoView
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+          inline: 'nearest',
+        })
+      }
     }
   }, 150)
 }
@@ -277,7 +286,7 @@ const responseBodyDisplay = computed(() => {
               </svg>
               {{ isConnecting ? 'Connecting...' : 'Connect' }}
             </button>
-            <button
+            <!-- <button
               type="button"
               @click="disconnectWebSocket"
               :disabled="!isConnected"
@@ -292,7 +301,7 @@ const responseBodyDisplay = computed(() => {
                 ></path>
               </svg>
               Disconnect
-            </button>
+            </button> -->
           </div>
 
           <!-- Connection Error -->
@@ -481,7 +490,7 @@ const responseBodyDisplay = computed(() => {
             </details>
 
             <!-- Response Body -->
-            <div v-if="testResult.data !== undefined">
+            <div id="ws-response-body" v-if="testResult.data !== undefined">
               <h6
                 class="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
               >

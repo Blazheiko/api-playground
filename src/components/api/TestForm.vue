@@ -363,24 +363,33 @@ const scrollToResponse = async () => {
   await nextTick()
 
   setTimeout(() => {
+    // Сначала пытаемся найти блок Response Body, если он есть
+    const responseBodyElement = document.getElementById('response-body')
     const responseElement = document.getElementById('response-section')
-    if (responseElement) {
-      responseElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
-      })
 
-      setTimeout(() => {
-        const mainContent = document.querySelector('main')
-        if (mainContent) {
-          const currentScrollTop = mainContent.scrollTop
-          mainContent.scrollTo({
-            top: Math.max(0, currentScrollTop - 100),
-            behavior: 'smooth',
-          })
-        }
-      }, 100)
+    const targetElement = responseBodyElement || responseElement
+
+    if (targetElement) {
+      // Используем getBoundingClientRect для более точного позиционирования
+      const rect = targetElement.getBoundingClientRect()
+      const mainContent = document.querySelector('main')
+
+      if (mainContent) {
+        // Вычисляем позицию для скролла так, чтобы элемент был в верхней части видимой области
+        const scrollTop = mainContent.scrollTop + rect.top - 120 // 120px отступ сверху
+
+        mainContent.scrollTo({
+          top: Math.max(0, scrollTop),
+          behavior: 'smooth',
+        })
+      } else {
+        // Fallback к стандартному scrollIntoView
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+          inline: 'nearest',
+        })
+      }
     }
   }, 150)
 }
@@ -811,7 +820,10 @@ const clearResult = () => {
             </details>
 
             <!-- Response Body - показывается для всех HTTP ответов (успешных и неуспешных) -->
-            <div v-if="testResult.data !== undefined || testResult.firstResult?.data !== undefined">
+            <div
+              id="response-body"
+              v-if="testResult.data !== undefined || testResult.firstResult?.data !== undefined"
+            >
               <h6
                 class="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2"
               >

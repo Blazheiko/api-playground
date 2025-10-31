@@ -131,24 +131,26 @@ const scrollToTestForm = () => {
   const element = testFormElement || (testFormRef.value && testFormRef.value.$el)
 
   if (element) {
-    // Используем простой scrollIntoView с настройками
-    element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-      inline: 'nearest',
-    })
+    // Используем getBoundingClientRect для более точного позиционирования
+    const rect = element.getBoundingClientRect()
+    const mainContent = document.querySelector('main')
 
-    // Дополнительно корректируем позицию с учетом offset
-    setTimeout(() => {
-      const mainContent = document.querySelector('main')
-      if (mainContent) {
-        const currentScrollTop = mainContent.scrollTop
-        mainContent.scrollTo({
-          top: Math.max(0, currentScrollTop - 80),
-          behavior: 'smooth',
-        })
-      }
-    }, 100)
+    if (mainContent) {
+      // Вычисляем позицию для скролла так, чтобы элемент был в верхней части видимой области
+      const scrollTop = mainContent.scrollTop + rect.top - 100 // 100px отступ сверху
+
+      mainContent.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth',
+      })
+    } else {
+      // Fallback к стандартному scrollIntoView
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      })
+    }
   }
 }
 

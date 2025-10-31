@@ -21,9 +21,10 @@ const wsState = ref<WebSocketState>({
 
 export const useWebSocket = () => {
   const connect = async (url: string) => {
-    if (wsInstance.value) {
-      disconnect()
-    }
+    // if (wsInstance.value) {
+    //   disconnect()
+    // }
+    if(wsState.value.isConnecting) return
 
     try {
       wsState.value.isConnecting = true
