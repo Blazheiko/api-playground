@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ApiGroup, ApiRoute } from '@/stores/api-doc'
-import { formatRateLimit } from '@/utils/apiHelpers'
+import { formatRateLimit } from '@/utils/api-helpers'
 import ApiRouteComponent from './ApiRoute.vue'
 import { useApiStore } from '@/stores/api-doc'
 

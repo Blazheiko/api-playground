@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useApiSettingsStore } from './api-settings'
+import { normalizePath } from '@/utils/api-helpers'
 
 export interface RouteParameter {
   name: string
@@ -80,18 +82,18 @@ export const useApiStore = defineStore('api', () => {
   const selectedRouteId = ref<number | null>(null) // Selected route ID
 
   // Helper functions for handling nested groups
-  function normalizePrefix(parentPrefix: string): string {
-    if (!parentPrefix) return ''
-    let normalizedPrefix = parentPrefix
-    if (parentPrefix.endsWith('/')) {
-      normalizedPrefix = parentPrefix.slice(0, -1)
-    }
-    if (parentPrefix.startsWith('/')) {
-      normalizedPrefix = parentPrefix.slice(1)
-    }
+  // function normalizePrefix(parentPrefix: string): string {
+  //   if (!parentPrefix) return ''
+  //   let normalizedPrefix = parentPrefix
+  //   if (parentPrefix.endsWith('/')) {
+  //     normalizedPrefix = parentPrefix.slice(0, -1)
+  //   }
+  //   if (parentPrefix.startsWith('/')) {
+  //     normalizedPrefix = parentPrefix.slice(1)
+  //   }
 
-    return normalizedPrefix
-  }
+  //   return normalizedPrefix
+  // }
 
   let currentId = 0
   function getNextId(): number {
@@ -115,12 +117,12 @@ export const useApiStore = defineStore('api', () => {
     parentPrefix: string = '',
   ): ApiRoute[] {
     const routes: ApiRoute[] = []
-    const normalizedParentPrefix = parentPrefix ? normalizePrefix(parentPrefix) : ''
+    const normalizedParentPrefix = parentPrefix ? normalizePath(parentPrefix) : ''
     if (!Array.isArray(groupRoutes)) throw new Error('groupRoutes is not an array')
 
     for (const item of groupRoutes) {
       if ('group' in item && item.group && Array.isArray(item.group)) {
-        createGroupRoute(groups, item, `${normalizedParentPrefix}/${normalizePrefix(item.prefix)}`)
+        createGroupRoute(groups, item, `${normalizedParentPrefix}/${normalizePath(item.prefix)}`)
       } else {
         const route = item as ApiRoute
         // Use existing ID or create new one
@@ -137,7 +139,7 @@ export const useApiStore = defineStore('api', () => {
           responseSchema: {
             schema: route.typeResponse ? responseTypes.value[route.typeResponse]?.fields || '' : '',
           },
-          fullUrl: `${pathPrefix.value}/${normalizePrefix(route.url)}`,
+          fullUrl: `${pathPrefix.value}/${normalizePath(route.url)}`,
           isSelected: false,
         })
       }
@@ -286,7 +288,7 @@ export const useApiStore = defineStore('api', () => {
       wsRouteGroups.value = data.wsRoutes || []
       validationSchemas.value = data.validationSchemas || {}
       responseTypes.value = data.responseTypes || {}
-      pathPrefix.value = normalizePrefix(data.pathPrefix || '')
+      pathPrefix.value = normalizePath(data.pathPrefix || '')
 
       assignIdsToTreeRoutes(httpRouteGroups.value)
       assignIdsToTreeRoutes(wsRouteGroups.value)
@@ -315,6 +317,8 @@ export const useApiStore = defineStore('api', () => {
           routesCount: firstGroup?.group.filter((item) => !('group' in item)).length || 0,
         })
       }
+      const apiSettingsStore = useApiSettingsStore()
+      apiSettingsStore.setPathPrefix(pathPrefix.value)
 
       console.log('📊 Flat routes (for navigation):')
       console.log('  HTTP routes:', flatHttpRoute.value.length)

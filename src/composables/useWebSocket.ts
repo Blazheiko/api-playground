@@ -1,5 +1,6 @@
 import { ref, computed, readonly } from 'vue'
 import WebsocketBase, { type WebsocketMessage } from '@/utils/websocket-base'
+import baseApi from '@/utils/base-api'
 
 interface WebSocketState {
   url: string
@@ -66,6 +67,8 @@ export const useWebSocket = () => {
         },
       })
 
+      baseApi.setWebSocketClient(wsInstance.value as WebsocketBase)
+
       // Ждем установки соединения (состояние управляется через callbacks)
       // Просто ждем некоторое время для инициализации
       await new Promise<void>((resolve) => {
@@ -84,6 +87,7 @@ export const useWebSocket = () => {
     if (wsInstance.value) {
       wsInstance.value.destroy()
       wsInstance.value = null
+      baseApi.setWebSocketClient(null)
     }
 
     wsState.value.isConnected = false
@@ -168,5 +172,8 @@ export const useWebSocket = () => {
     error: computed(() => wsState.value.error),
     url: computed(() => wsState.value.url),
     lastMessage: computed(() => wsState.value.lastMessage),
+
+    // WebSocket instance for external use
+    getInstance: () => wsInstance.value,
   }
 }

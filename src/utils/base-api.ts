@@ -1,6 +1,7 @@
 import WebsocketBase from '@/utils/websocket-base'
 import { useEventBus } from '@/utils/event-bus'
-import { useApiSettingsStore } from '@/stores/api-settings'
+import { useApiSettingsStore, type ApiSettings } from '@/stores/api-settings'
+import { normalizePath } from '@/utils/api-helpers'
 
 interface HttpResponse {
   [key: string]: unknown
@@ -34,12 +35,17 @@ interface RequestInit {
 }
 let webSocketClient: WebsocketBase | null = null
 const eventBus = useEventBus()
+let apiSettings: ApiSettings | null = null
+setTimeout(() => {
+  const apiSettingsStore = useApiSettingsStore()
+  apiSettings = apiSettingsStore.settings
+}, 1000)
 
 // Функция для получения настроек API
-const getApiSettings = () => {
-  const apiSettingsStore = useApiSettingsStore()
-  return apiSettingsStore.settings
-}
+// const getApiSettings = () => {
+//   const apiSettingsStore = useApiSettingsStore()
+//   return apiSettingsStore.settings
+// }
 
 // Функция для проверки доступности сервера
 const checkServerHealth = async (baseUrl: string): Promise<boolean> => {
@@ -62,7 +68,7 @@ const api: ApiMethods = {
     body: Record<string, unknown> = {},
     customHeaders: Record<string, string> = {},
   ): Promise<ApiResponse<T>> => {
-    const settings = getApiSettings()
+    // const settings = getApiSettings()
 
     // Базовые заголовки
     const baseHeaders: Record<string, string> = {
@@ -71,8 +77,8 @@ const api: ApiMethods = {
 
     // Добавляем глобальные заголовки только если они не пустые
     const headersToAdd =
-      Object.keys(settings.globalHeaders).length > 0
-        ? { ...baseHeaders, ...settings.globalHeaders, ...customHeaders }
+      apiSettings && Object.keys(apiSettings.globalHeaders).length > 0
+        ? { ...baseHeaders, ...apiSettings.globalHeaders, ...customHeaders }
         : { ...baseHeaders, ...customHeaders }
 
     const init: RequestInit = {
@@ -85,14 +91,14 @@ const api: ApiMethods = {
     }
 
     try {
-      const settings = getApiSettings()
+      // const settings = getApiSettings()
       let url = route
       if (route.startsWith('http')) {
         url = route
       } else if (route.startsWith('/')) {
-        url = `${settings.baseUrl}/${route.slice(1)}`
+        url = `${apiSettings?.baseUrl ?? ''}/${route.slice(1)}`
       } else {
-        url = `${settings.baseUrl}/${route}`
+        url = `${apiSettings?.baseUrl ?? ''}/${route}`
       }
 
       console.log('Making API request:', {
@@ -157,9 +163,9 @@ const api: ApiMethods = {
       let errorCode = 0
 
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        const settings = getApiSettings()
+        // const settings = getApiSettings()
         errorMessage =
-          `Failed to connect to server at ${settings.baseUrl}. Please check:\n` +
+          `Failed to connect to server at ${apiSettings?.baseUrl}. Please check:\n` +
           '1. Server is running and accessible\n' +
           '2. Base URL is correct in API settings\n' +
           '3. CORS is properly configured on server\n' +
@@ -181,6 +187,7 @@ const api: ApiMethods = {
   },
 
   setWebSocketClient: (client: WebsocketBase | null) => {
+    console.log('setWebSocketClient', client)
     webSocketClient = client
   },
 
@@ -188,17 +195,24 @@ const api: ApiMethods = {
     route: string,
     body: Record<string, unknown> = {},
   ): Promise<T | null> => {
-    if (!webSocketClient) return null
+    if (!webSocketClient) return {
+      data: null,
+      error: { code: 408, message: 'WebSocket client not found' },
+    } as T
 
     try {
       // console.log('webSocketClient')
       // console.log(webSocketClient)
-      const result = await webSocketClient.api(route, body)
+      const result = await webSocketClient.api(`${apiSettings?.pathPrefix ?? ''}/${normalizePath(route)}`, body)
       console.log({ result })
       return result as unknown as T
     } catch (e) {
       console.error(e)
-      return null
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+      return {
+        data: null,
+        error: { code: 408, message: errorMessage },
+      } as T
     }
   },
 }

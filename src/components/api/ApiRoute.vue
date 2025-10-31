@@ -8,8 +8,9 @@ import {
   getTypeClass,
   extractParameters,
   formatRateLimit,
-} from '@/utils/apiHelpers'
+} from '@/utils/api-helpers'
 import TestForm from './TestForm.vue'
+import TestFormWs from './TestFormWs.vue'
 
 interface Props {
   route: ApiRoute
@@ -124,8 +125,9 @@ const toggleTestForm = async () => {
 }
 
 const scrollToTestForm = () => {
-  // Сначала пробуем найти форму по ID
-  const testFormElement = document.getElementById('test-form')
+  // Сначала пробуем найти форму по ID (для HTTP или WebSocket)
+  const testFormElement =
+    document.getElementById('test-form') || document.getElementById('ws-test-form')
   const element = testFormElement || (testFormRef.value && testFormRef.value.$el)
 
   if (element) {
@@ -232,7 +234,6 @@ const scrollToTestForm = () => {
               {{ routeRateLimit.formatted }}
             </span>
             <button
-              v-if="!isWebSocket"
               @click.stop="toggleTestForm"
               class="px-3 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors duration-200 whitespace-nowrap focus:ring-2 focus:ring-green-300 focus:outline-none"
             >
@@ -367,8 +368,6 @@ const scrollToTestForm = () => {
         </div>
 
         <div class="space-y-4 lg:col-span-3">
-
-
           <!-- Response Format -->
           <div>
             <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Response Format</h5>
@@ -459,7 +458,6 @@ const scrollToTestForm = () => {
       <!-- Duplicate Test Button -->
       <div class="flex justify-center mt-3 pt-2 border-t border-gray-200 dark:border-gray-700">
         <button
-          v-if="!isWebSocket"
           @click="toggleTestForm"
           class="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 focus:ring-2 focus:ring-green-300 focus:outline-none flex items-center gap-2"
         >
@@ -471,7 +469,7 @@ const scrollToTestForm = () => {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          Test API
+          {{ isWebSocket ? 'Test WebSocket API' : 'Test API' }}
         </button>
       </div>
 
@@ -479,6 +477,14 @@ const scrollToTestForm = () => {
       <TestForm
         v-if="showTestForm && !isWebSocket"
         ref="testFormRef"
+        :route="route"
+        :group-prefix="groupPrefix"
+      />
+
+      <!-- WebSocket Test Form Section -->
+      <TestFormWs
+        v-else-if="showTestForm && isWebSocket"
+        ref="testFormWsRef"
         :route="route"
         :group-prefix="groupPrefix"
       />

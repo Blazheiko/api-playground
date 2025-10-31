@@ -13,8 +13,8 @@ app.use(pinia)
 app.use(router)
 
 // Initialize API settings store to load settings from localStorage
-import { useApiSettingsStore } from '@/stores/api-settings'
-const apiSettingsStore = useApiSettingsStore(pinia)
+// import { useApiSettingsStore } from '@/stores/api-settings'
+// const apiSettingsStore = useApiSettingsStore(pinia)
 // Settings are automatically loaded in the store constructor
 
 app.mount('#app')

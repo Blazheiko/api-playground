@@ -1,15 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
+const BASE_URL = 'http://127.0.0.1:8088'
+
 export interface ApiSettings {
   baseUrl: string
+  pathPrefix: string
   globalHeaders: Record<string, string>
   enableGlobalHeaders: boolean
 }
 
 export const useApiSettingsStore = defineStore('api-settings', () => {
   // State
-  const baseUrl = ref<string>('http://127.0.0.1:8088')
+  const baseUrl = ref<string>(BASE_URL)
+  const pathPrefix = ref<string>('')
   const globalHeaders = ref<Record<string, string>>({})
   const enableGlobalHeaders = ref<boolean>(true)
 
@@ -18,11 +22,17 @@ export const useApiSettingsStore = defineStore('api-settings', () => {
     baseUrl: baseUrl.value,
     globalHeaders: enableGlobalHeaders.value ? globalHeaders.value : {},
     enableGlobalHeaders: enableGlobalHeaders.value,
+    pathPrefix: pathPrefix.value,
   }))
 
   // Actions
   const setBaseUrl = (url: string) => {
     baseUrl.value = url
+    saveToLocalStorage()
+  }
+
+  const setPathPrefix = (prefix: string) => {
+    pathPrefix.value = prefix
     saveToLocalStorage()
   }
 
@@ -47,7 +57,7 @@ export const useApiSettingsStore = defineStore('api-settings', () => {
   }
 
   const resetToDefaults = () => {
-    baseUrl.value = 'http://127.0.0.1:8088'
+    baseUrl.value = BASE_URL
     globalHeaders.value = {}
     enableGlobalHeaders.value = true
     saveToLocalStorage()
@@ -58,6 +68,7 @@ export const useApiSettingsStore = defineStore('api-settings', () => {
     try {
       const settingsData = {
         baseUrl: baseUrl.value,
+        pathPrefix: pathPrefix.value,
         globalHeaders: globalHeaders.value,
         enableGlobalHeaders: enableGlobalHeaders.value,
       }
@@ -74,7 +85,7 @@ export const useApiSettingsStore = defineStore('api-settings', () => {
       const saved = localStorage.getItem('api-settings')
       if (saved) {
         const settingsData = JSON.parse(saved) as ApiSettings
-        baseUrl.value = settingsData.baseUrl || 'http://127.0.0.1:8088'
+        baseUrl.value = settingsData.baseUrl || BASE_URL
         globalHeaders.value = settingsData.globalHeaders || {}
         enableGlobalHeaders.value =
           settingsData.enableGlobalHeaders !== undefined ? settingsData.enableGlobalHeaders : true
@@ -94,12 +105,14 @@ export const useApiSettingsStore = defineStore('api-settings', () => {
   return {
     // State
     baseUrl,
+    pathPrefix,
     globalHeaders,
     enableGlobalHeaders,
     settings,
 
     // Actions
     setBaseUrl,
+    setPathPrefix,
     setGlobalHeaders,
     addGlobalHeader,
     removeGlobalHeader,

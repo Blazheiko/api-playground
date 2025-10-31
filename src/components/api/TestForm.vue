@@ -2,8 +2,8 @@
 import { ref, computed, nextTick } from 'vue'
 import type { ApiRoute } from '@/stores/api-doc'
 import { useApiStore } from '@/stores/api-doc'
-import { getDefaultRequestBody, validateJSON } from '@/utils/apiHelpers'
-import { extractParameters } from '@/utils/apiHelpers'
+import { getDefaultRequestBody, validateJSON } from '@/utils/api-helpers'
+import { extractParameters } from '@/utils/api-helpers'
 import baseApi from '@/utils/base-api'
 
 interface Props {

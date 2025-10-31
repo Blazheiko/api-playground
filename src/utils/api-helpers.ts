@@ -193,3 +193,11 @@ export function validateJSON(jsonString: string): {
     }
   }
 }
+
+export function normalizePath(path: string): string {
+  if (!path) return '';
+  let normalizedPath = path;
+  if (normalizedPath.endsWith('/')) normalizedPath = normalizedPath.slice(0, -1);
+  if (normalizedPath.startsWith('/')) normalizedPath = normalizedPath.slice(1);
+  return normalizedPath;
+};

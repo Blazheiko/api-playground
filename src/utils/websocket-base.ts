@@ -75,6 +75,7 @@ class WebsocketBase {
   private messageQueue: SendPayload[] = []
   private isDestroyed: boolean = false
   private timerReconnect?: number
+  private timeoutApi: number = 20000
 
   constructor(url: string, options: WebsocketConfig = {}) {
     this.reconnectDelay = options.reconnectDelay || 5000
@@ -84,6 +85,7 @@ class WebsocketBase {
     this.timeout = options.timeout || 20000
     this.authToken = options.authToken
     this.callbacks = options.callbacks
+    this.timeoutApi = options.timeout || 20000
     this.wsConnection = {
       ws: null,
       closeInitiated: false,
@@ -133,7 +135,7 @@ class WebsocketBase {
 
     this.wsConnection.ws.onmessage = (message: MessageEvent): void => {
       try {
-        // console.log('onmessage: ', message.data)
+        console.log('onmessage: ', message.data)
         const data: WebsocketMessage = JSON.parse(message.data as string)
         if (!this.validateMessage(data)) {
           console.error('Invalid message format:', data)
@@ -146,7 +148,7 @@ class WebsocketBase {
           this.handleBroadcast(data)
         } else if (data.event.startsWith('service:')) {
           this.service(data)
-        } else if (data.event.startsWith('api:')) {
+        } else if (data.event.startsWith('api/')) {
           this.messageHandler(data)
         }
       } catch (error) {
@@ -296,17 +298,25 @@ class WebsocketBase {
 
   async api(route: string, payload: Record<string, unknown> = {}): Promise<WebsocketMessage> {
     return new Promise((resolve, reject) => {
-      if (this.apiResolve[route]) reject()
+      if (this.apiResolve[route]) {
+        reject({ code: 409, message: 'Request already in progress' })
+        return
+      }
+      // if(route.startsWith('/')) {
+      //   route = route.substring(1)
+      // }
+
       this.send({
-        event: `api:${route}`,
+        event: route as string,
         payload,
       })
       this.apiResolve[route] = {
         resolve,
         reject,
         timeout: window.setTimeout(() => {
-          reject()
-        }, 10000),
+          console.error('timeout', route)
+          reject({ code: 408, message: 'Timeout' })
+        }, this.timeoutApi),
       }
     })
   }
@@ -334,9 +344,10 @@ class WebsocketBase {
 
   private messageHandler(data: WebsocketMessage): void {
     console.log('message handler')
-    const arr = data.event.split(':')
-    if (arr.length < 2) return
-    const route = arr[1]
+    // const arr = data.event.split(':')
+    // if (arr.length < 2) return
+    // const route = arr[1]
+    const route = data.event
     const cb = this.apiResolve[route as string]
     if (!cb) return
     window.clearTimeout(cb.timeout)
