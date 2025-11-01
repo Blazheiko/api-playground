@@ -22,6 +22,7 @@ const {
   error: wsError,
   statusColor,
   statusText,
+  connectionStatus,
 } = useWebSocket()
 
 // Форма данных
@@ -218,7 +219,20 @@ const responseBodyDisplay = computed(() => {
   <div id="ws-test-form" class="test-form-section flex-1">
     <div class="border-t dark:border-gray-600 pt-3 mt-3">
       <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-        <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          :class="[
+            'h-5 w-5 transition-colors duration-200',
+            {
+              'text-green-600 dark:text-green-400': connectionStatus === 'connected',
+              'text-yellow-600 dark:text-yellow-400': connectionStatus === 'connecting',
+              'text-red-600 dark:text-red-400': connectionStatus === 'error',
+              'text-gray-600 dark:text-gray-400': connectionStatus === 'disconnected',
+            },
+          ]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
